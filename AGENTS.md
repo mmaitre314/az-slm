@@ -5,9 +5,11 @@ This repo benchmarks Small Language Models (SLMs) on Azure VMs. It is a playgrou
 ## Workflow
 
 - Commit and push directly to `main`. Do not open pull requests or create feature branches.
-- Keep tooling lightweight: `bash`, `curl`, and the Python 3 standard library are always available.
-  PyPI and npm are blocked in the agent sandbox (see [Network access](#network-access)), so do not
-  depend on third-party packages on the agent side.
+- Write scripts in Python 3 (3.11 in the sandbox) using **only the standard library**. PyPI and npm
+  are blocked in the agent sandbox (see [Network access](#network-access)), so third-party packages
+  can't be installed. Use `urllib.request` for HTTP. It honors `HTTPS_PROXY` and the proxy CA bundle
+  (`SSL_CERT_FILE`) with no extra setup. Ad-hoc `curl` is fine for one-off exploration.
+- Put scripts in `scripts/` and call ARM through `scripts/arm.py`.
 
 ## Secrets and identifiers
 
@@ -42,9 +44,10 @@ for that host.
 - Token injection covers `management.azure.com` only. Data-plane endpoints (Storage blobs,
   Key Vault, and so on) get no token, so prefer control-plane (ARM) operations.
 
-```bash
-ARM=https://management.azure.com
-curl -sS "$ARM/subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/$AZURE_RESOURCE_GROUP?api-version=2021-04-01"
+```python
+import arm  # scripts/arm.py
+
+status, rg = arm.request("GET", arm.rg_path(), "2021-04-01")
 ```
 
 ARM conventions:
@@ -62,7 +65,7 @@ ARM conventions:
   marketplace images, and resource provider state. Expect subscription-level *writes* (new resource
   groups, provider registration, quota requests) to fail.
 - Regional vCPU quotas are small. Check `usages` before picking VM sizes and counts.
-- `scripts/check-azure-access.sh` re-validates access and prints no identifiers.
+- `python3 scripts/check_azure_access.py` re-validates access and prints no identifiers.
 
 ## Working with VMs
 
