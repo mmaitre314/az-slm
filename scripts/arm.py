@@ -45,6 +45,26 @@ def request(method, path, api_version=None, body=None, timeout=60):
     return status, json.loads(raw) if raw else None
 
 
+def resource_graph(query, subscriptions=None):
+    """Run an Azure Resource Graph query and return all rows, following $skipToken paging.
+
+    Leave `subscriptions` unset for tenant-wide tables such as SpotResources, which return nothing
+    when scoped to a subscription where the caller has only resource-group access.
+    """
+    rows, options = [], {"$top": 1000}
+    while True:
+        body = {"query": query, "options": options}
+        if subscriptions:
+            body["subscriptions"] = subscriptions
+        status, page = request("POST", "/providers/Microsoft.ResourceGraph/resources", "2022-10-01", body=body)
+        if status != 200:
+            raise RuntimeError(f"Resource Graph query failed: HTTP {status}: {redact(json.dumps(page))[:500]}")
+        rows += page["data"]
+        if not page.get("$skipToken"):
+            return rows
+        options = {"$top": 1000, "$skipToken": page["$skipToken"]}
+
+
 def redact(text):
     """Mask subscription and tenant IDs before printing or saving text."""
     for name in ("AZURE_SUBSCRIPTION_ID", "AZURE_TENANT_ID"):
