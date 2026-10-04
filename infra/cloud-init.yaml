@@ -64,7 +64,8 @@ write_files:
       # Delete or deallocate this VM after IDLE_HOURS without activity, using the VM's managed
       # identity. Activity: 15-minute load average >= 1, or /var/lib/azslm/heartbeat touched
       # (scripts/deploy.py touches it on every Run Command). Create /var/lib/azslm/watchdog-disabled
-      # to pause it.
+      # to pause it. While /var/lib/azslm/keep exists (results saved to /var/lib/azslm/results on the
+      # OS disk and not yet fetched), it deallocates instead of deleting, so the results survive.
       set -u
       IDLE_HOURS=__IDLE_HOURS__
       ACTION=__IDLE_ACTION__
@@ -88,6 +89,10 @@ write_files:
       logger -t azslm-watchdog "idle ${idle}s of ${limit}s, load15 ${load15}"
       [ "$idle" -lt "$limit" ] && exit 0
       [ -f "$STATE/watchdog-disabled" ] && { logger -t azslm-watchdog "disabled; not acting"; exit 0; }
+      if [ "$ACTION" = delete ] && [ -f "$STATE/keep" ]; then
+        ACTION=deallocate
+        logger -t azslm-watchdog "unfetched results ($STATE/keep): deallocating instead of deleting"
+      fi
       IMDS=http://169.254.169.254/metadata
       token=$(curl -sf -H Metadata:true "$IMDS/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/" | jq -r .access_token)
       id=$(curl -sf -H Metadata:true "$IMDS/instance/compute/resourceId?api-version=2021-02-01&format=text")

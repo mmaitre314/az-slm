@@ -7,6 +7,8 @@
   deploy.py run bench1 bench/llama_bench.sh --background llama -e QUANTS=Q4_K_M   # long jobs
   deploy.py job bench1 llama                                     # job state + log tail
   deploy.py fetch bench1 /mnt/data/results.tar.gz results/x.tar.gz
+  deploy.py harvest bench1 experiments/E09-vllm-cpu/raw [--release]  # /var/lib/azslm/results
+  deploy.py start bench1                                         # after a watchdog deallocation
   deploy.py status
   deploy.py teardown --run bench1 [--all]
 
@@ -264,6 +266,33 @@ def cmd_fetch(args):
     out(f"fetched {args.remote} -> {args.local} ({size} bytes)")
 
 
+def cmd_harvest(args):
+    """Fetch the results a VM saved on its OS disk (bench/save_results.sh) and unpack them locally.
+
+    --release removes /var/lib/azslm/keep afterwards, so the idle watchdog may delete the VM again.
+    """
+    tarball = "/var/lib/azslm/results.tar.gz"
+    _, _, code = run_script(args.vm, f"tar -czf {tarball} -C {shlex.quote(args.remote)} .")
+    if code != 0:
+        fail(f"cannot pack {args.remote} on {args.vm}")
+    local = pathlib.Path(args.local)
+    tmp = local / ".harvest.tar.gz"
+    cmd_fetch(argparse.Namespace(vm=args.vm, remote=tarball, local=str(tmp)))
+    with tarfile.open(tmp) as tf:
+        tf.extractall(local, filter="data")
+    tmp.unlink()
+    out(f"unpacked into {local}: " + ", ".join(sorted(p.name for p in local.iterdir())))
+    if args.release:
+        run_script(args.vm, "rm -f /var/lib/azslm/keep")
+        out("released: the watchdog may delete the VM when idle")
+
+
+def cmd_start(args):
+    vm = f"{arm.rg_path()}/providers/Microsoft.Compute/virtualMachines/{args.vm}"
+    status, _ = arm.lro("POST", vm + "/start", API["Microsoft.Compute/virtualMachines"])
+    out(f"start {args.vm}: HTTP {status}")
+
+
 def cmd_status(args):
     _, vms = arm.request("GET", f"{arm.rg_path()}/providers/Microsoft.Compute/virtualMachines",
                          API["Microsoft.Compute/virtualMachines"])
@@ -341,6 +370,15 @@ def main():
     f.add_argument("remote")
     f.add_argument("local")
     f.set_defaults(fn=cmd_fetch)
+    h = sub.add_parser("harvest", help="fetch and unpack the results a VM saved on its OS disk")
+    h.add_argument("vm")
+    h.add_argument("local", help="local directory to unpack into")
+    h.add_argument("--remote", default="/var/lib/azslm/results")
+    h.add_argument("--release", action="store_true", help="then let the watchdog delete the VM")
+    h.set_defaults(fn=cmd_harvest)
+    st = sub.add_parser("start", help="start a deallocated VM")
+    st.add_argument("vm")
+    st.set_defaults(fn=cmd_start)
     s = sub.add_parser("status", help="list VMs in the resource group")
     s.set_defaults(fn=cmd_status)
     t = sub.add_parser("teardown", help=f"delete resources tagged {RUN_TAG}=<run>")

@@ -31,11 +31,13 @@ result; the experiment README is the durable record.
    don't contend for CPU.
 2. **Run** (runner): deploy the VM if needed, write or adapt `bench/` scripts, start them with
    `scripts/deploy.py run <vm> <script> --background <job>`, and confirm they're running. Long work
-   always runs as a background job. The runner returns instead of waiting.
+   always runs as a background job, written as one self-contained chain that runs every step
+   without an agent in the loop and calls `bench/save_results.sh` after each step. The runner
+   returns instead of waiting.
 3. **Track** (tracker, or a shell monitor): poll `scripts/deploy.py job <vm> <job>` and update
    PLAN.md.
-4. **Report** (reporter): `deploy.py fetch` the results (tar + gzip first), write Measurements and
-   Cost, draft Analysis.
+4. **Report** (reporter): `deploy.py harvest <vm> EXX-<slug>/raw` the saved results, write
+   Measurements and Cost, draft Analysis. Pass `--release` once nothing else is needed from the VM.
 5. **Conclude** (orchestrator): review the numbers, write Analysis and Next steps, and update
    PLAN.md, adding new experiments the results call for.
 6. **Clean up**: `scripts/deploy.py teardown --run <vm>` once no planned experiment needs the VM.
@@ -49,3 +51,7 @@ result; the experiment README is the durable record.
 - Record versions: llama.cpp commit, vLLM/OpenVINO versions, image digests, model repo revisions.
 - State every assumption behind a cost number (see COST_MODEL.md).
 - Mind the budget in PLAN.md: tear down VMs that have nothing queued.
+- Assume any agent can stop mid-task (agents share a 5-hour usage limit; on 2026-10-04 it stopped
+  every runner twice). Results must never live only in an agent's context or only on `/mnt/data`
+  (wiped on deallocation, lost when the VM deletes itself). `bench/save_results.sh` copies them to
+  the OS disk and makes the watchdog deallocate instead of delete; commit fetched results right away.

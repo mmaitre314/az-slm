@@ -87,13 +87,18 @@ ARM conventions:
     Run Command keeps only the **last 4 KiB** of output and times out after 90 minutes, so use
     `--background <job>` for anything long and `deploy.py job <vm> <job>` to poll it.
   - `deploy.py fetch <vm> <remote> <local>` copies small files (4 KiB per call: compress first).
+  - `bench/save_results.sh <files>` (on the VM) copies results to `/var/lib/azslm/results` on the OS
+    disk; `deploy.py harvest <vm> <local-dir> [--release]` fetches and unpacks them. Call it after
+    every step of a job chain.
+  - `deploy.py start <vm>` restarts a VM the watchdog deallocated.
   - `deploy.py teardown --run <vm>` deletes everything tagged `azslm-run=<vm>`.
 - VMs have Internet access through their Standard public IP (no inbound rules), so they download
   models from Hugging Face directly (~1 GB/s observed) even though the sandbox cannot.
   `/mnt/data` is the local NVMe disk(s), striped: fast, but wiped on deallocation.
-- Auto-shutdown: an in-VM watchdog deletes (default) or deallocates the VM after `idleHours` (3)
+- Auto-shutdown: an in-VM watchdog deletes (default) or deallocates the VM after `idleHours` (1)
   without load or Run Command activity, using the VM's managed identity with a custom
-  least-privilege role. Azure's daily auto-shutdown deallocates it `fallbackHours` (12) after the
+  least-privilege role. While `/var/lib/azslm/keep` exists (written by `save_results.sh` and removed by
+  `harvest --release`) it deallocates instead of deleting, so saved results survive. Azure's daily auto-shutdown deallocates it `fallbackHours` (12) after the
   deployment hour as a fallback. Touch `/var/lib/azslm/watchdog-disabled` on the VM to pause the
   watchdog. Delete VMs when a run finishes anyway.
 - llama.cpp gotcha (checked 2026-10-04 on master): the AMX matmul path returns garbage for Qwen3.5-family
@@ -105,6 +110,9 @@ ARM conventions:
 
 - Experiments live in `experiments/` (see its README for the process, roles and cost model). Keep
   PLAN.md current.
+- Subagents share a 5-hour usage limit and can stop mid-task (twice on 2026-10-04, losing results).
+  Run each experiment as one self-contained background chain that needs no agent to proceed, save
+  results after every step, and commit fetched results right away.
 - Identical VM sizes vary: two E16ds_v7 instances differed by 9–25% on the same llama.cpp runs
   (E08). Compare configurations on the same VM, or include a reference run on each VM.
 - Azure Policy installs Microsoft Defender for Endpoint and monitoring agents on every VM. Check

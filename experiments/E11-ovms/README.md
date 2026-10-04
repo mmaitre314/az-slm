@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | queued (after E10, same VM) |
+| Status | deprioritized (2026-10-04): E10 found OpenVINO GenAI's continuous-batching engine prefills one request at a time at ~34 tok/s for this model; OVMS uses the same engine. Not run. The OVMS image `openvino/model_server:2026.4.0` was pulled and `bench/ovms_*.sh` written, untested |
 | VM | `bench-lc2` (Standard_E16ds_v7, northcentralus, Regular) |
 | Stack | `openvino/model_server` Docker image (record tag/digest) with the LLM calculator (OpenAI-compatible API) |
 | Model | The best OpenVINO IR from E10 |
