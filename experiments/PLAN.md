@@ -34,9 +34,9 @@ Round 2 (planned 2026-10-04 ~12:45 UTC). VM names are new per deployment.
 
 | VM | Region | Size | Queue | $/h all-in | State |
 | --- | --- | --- | --- | ---: | --- |
-| `b2-vllm` | eastus2 | E16ds_v7 (Granite Rapids) | E17 | 1.681 | planned |
-| `b2-v6` | westus2 | E16ds_v6 (Emerald Rapids) | E18 | 1.326 | planned |
-| `b2-qual` | centralus | E16ds_v7 (Granite Rapids) | E16 | 1.615 | planned |
+| `b2-vllm` | eastus2 | E16ds_v7 (Granite Rapids) | E17 | 1.681 | running (job `chain` since 12:49, ~16:00 end) |
+| `b2-v6` | westus2 | E16ds_v6 (Emerald Rapids) | E18 | 1.326 | running (job `chain` since 12:32, ~13:50 end) |
+| `b2-qual` | centralus | E16ds_v7 (Granite Rapids) | E16 | 1.615 | running (job `e16` since 13:02, ~16:00 end) |
 
 Round 1 VMs, all deleted by the idle watchdog on 2026-10-04: `bench-e16v7` (eastus2, E02–E05,
 E09; 02:07–10:31), `bench-lc2` (northcentralus, E06–E08, E10; 02:42–11:14), `bench-v6` (westus2,
@@ -61,9 +61,9 @@ E13, E12; 02:37–10:49), `bench-vllm` (westus3) and `bench-ov` (centralus), bot
 | [E13](E13-emerald-vs-granite/) | Emerald Rapids (v6) vs Granite Rapids (v7), same llama.cpp runs | bench-v6 | runner (scripted) | done |
 | E14 | SGLang CPU backend (Intel AMX kernels) | – | runner | candidate |
 | E15 | Cross-stack cost and quality summary, recommendation (after E16–E18) | – | orchestrator | planned |
-| [E16](E16-task-quality/) | Task-level quality of vLLM BF16, W8A8, W4A16 (GSM8K, MMLU) | b2-qual | runner | planned |
-| [E17](E17-vllm-scaling-mtp/) | vLLM batch scaling, W4A16, threads, MTP | b2-vllm | runner | planned |
-| [E18](E18-vllm-emerald-rapids/) | vLLM on E16ds_v6 vs E16ds_v7 | b2-v6 | runner | planned |
+| [E16](E16-task-quality/) | Task-level quality of vLLM BF16, W8A8, W4A16 (GSM8K, MMLU) | b2-qual | runner | running |
+| [E17](E17-vllm-scaling-mtp/) | vLLM batch scaling, W4A16, threads, MTP | b2-vllm | runner | running |
+| [E18](E18-vllm-emerald-rapids/) | vLLM on E16ds_v6 vs E16ds_v7 | b2-v6 | runner | running |
 
 Status values: planned, queued, running, done, blocked, candidate (only if earlier results warrant it).
 
