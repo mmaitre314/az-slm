@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| Status | running (job `e16` on `b2-qual`, started 13:02 UTC) |
+| Status | done (chain 13:02–15:24 UTC, exit 0; VM deallocated by the watchdog with results kept, harvested and deleted 17:20 UTC) |
 | VM | `b2-qual` (Standard_E16ds_v7, centralus, Regular) |
 | Stack | vLLM CPU Docker image `vllm/vllm-openai-cpu:latest-x86_64` = vLLM 0.31.0, torch 2.13.0+cpu, digest `sha256:8024248339dc6878daa5349344ed29d49c8a6732f6bdf7400fda32ce33e4b30b` (image created 2026-10-03) |
 | Model | `Qwen/Qwen3.8-27B` @ `1d4bf0f2ff` (BF16, reference), `Avesed/Qwen3.8-27B-INT8-W8A8` @ `86b8427a5e`, `Avesed/Qwen3.8-27B-INT4-W4A16` @ `135ecac28b` (full SHAs in `raw/model-revisions.txt`) |
-| Dates | 2026-10-04 (setup and smoke test 12:28-12:50 UTC; full chain started 13:02 UTC) |
+| Dates | 2026-10-04 12:28–15:24 UTC (setup and smoke test 12:28–12:50; chain 13:02–15:24) |
 | Raw data | `raw/` (per-question answers for each model, scores) |
 
 ## Question
@@ -77,12 +77,79 @@ W8A8, then W4A16.
 
 ## Measurements
 
+Run `e16-20261004T1302`, greedy, thinking off, 64 sequences in flight, torch.compile (no eager
+fallback was needed). Raw: [`raw/quality-summary.jsonl`](raw/quality-summary.jsonl) (per model and
+benchmark), [`raw/quality-tasks.jsonl`](raw/quality-tasks.jsonl) (per question).
+
+| model | GSM8K (n=200) | 95% CI | MMLU (n=400) | 95% CI | GSM8K outputs truncated at 512 tokens |
+| --- | ---: | --- | ---: | --- | ---: |
+| BF16 | 92.5% | 88.0–95.4 | **90.0%** | 86.7–92.6 | 15 |
+| W8A8 | 92.5% | 88.0–95.4 | 87.25% | 83.6–90.2 | 18 |
+| W4A16 | 92.5% | 88.0–95.4 | 87.0% | 83.4–90.0 | 16 |
+
+Paired comparison with BF16 (same questions; McNemar exact test on the discordant pairs):
+
+| benchmark | model | same answer as BF16 | only BF16 correct | only this model correct | McNemar p | disagreements where BF16 was wrong |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| GSM8K | W8A8 | 90.5% | 6 | 6 | 1.00 | 13 of 19 |
+| GSM8K | W4A16 | 89.0% | 8 | 8 | 1.00 | 14 of 22 |
+| MMLU | W8A8 | 93.5% | 17 | 6 | **0.035** | 9 of 26 |
+| MMLU | W4A16 | 94.0% | 16 | 4 | **0.012** | 8 of 24 |
+
+Every GSM8K disagreement involves at least one output truncated at 512 tokens: when both models
+finish their reasoning, they agree on the answer. W8A8 and W4A16 agree with each other on 94.5% of MMLU answers.
+
+Answer extraction: GSM8K used the `####` marker for 183–185 of 200 outputs and the last number
+otherwise (the truncated ones). No MMLU output lacked a letter.
+
 ## Cost per token
 
-Not a throughput experiment. Record the wall time per model for context only.
+Not a throughput experiment, but the GSM8K runs are a useful real-text throughput check (200
+requests, ~121 input and ~315 output tokens each, 64 in flight; centralus E16ds_v7, $1.615/h all-in):
+
+| model | GSM8K wall (s) | output tok/s | total tok/s | $/M tokens (this workload) |
+| --- | ---: | ---: | ---: | ---: |
+| BF16 | 1660 | 38.5 | 53.0 | 8.46 |
+| W8A8 | 1027 | 61.2 | 84.8 | 5.29 |
+| W4A16 | 2891 | 22.5 | 30.9 | 14.52 |
+
+The ranking matches E17's random-prompt runs (W8A8 fastest, W4A16 slowest). E16's VM time for all
+three models was ~2.4 h, about $3.90.
 
 ## Analysis
 
+_Orchestrator, 2026-10-04._
+
+- **H1 (W8A8 within 1 point, ≥ 95% agreement): rejected for MMLU, holds for GSM8K.** On math
+  reasoning (GSM8K) W8A8 matches BF16 exactly (92.5%, 6 vs 6 discordant pairs). On knowledge
+  questions (MMLU) it loses 2.75 points (90.0 → 87.25%), with 93.5% answer agreement, and the paired
+  test says the loss is real (p = 0.035). Single-letter answers expose small shifts in the
+  logits that a long reasoning chain averages out.
+- **H2 (W4A16 loses 1–3 points, 90–95% agreement): confirmed.** −3.0 points on MMLU (p = 0.012),
+  equal on GSM8K, 89–94% agreement. W4A16 and W8A8 are statistically indistinguishable from each other.
+  Since W4A16 is also 3–5× slower on this stack (E17), it has no use here.
+- **H3 (disagreements cluster on hard questions): confirmed.** On GSM8K, 13 of 19 disagreements are
+  questions BF16 got wrong (BF16's error rate is 7.5%). On MMLU, 9 of 26 (BF16's error rate is 10%), so
+  disagreements are 3.5× more likely where BF16 itself fails.
+- **What it means for the recommendation**: W8A8 costs ~1.6× less than BF16 on vLLM (E09, E16
+  throughput) and gives the same answers on reasoning tasks, but drops ~3 points on knowledge-style
+  multiple choice. For classification or extraction jobs, run a task-specific check (a few hundred
+  labelled items, BF16 vs W8A8) before switching. If the job can't afford a 3-point loss, BF16 is
+  the fallback, at ~1.6× the cost.
+
 ## Threats to validity
 
+- 200 GSM8K and 400 MMLU questions: the 95% intervals are ±3–4 points. Only the paired test
+  separates the models.
+- 512-token cap: 15–18 GSM8K outputs per model were truncated. That lowers absolute GSM8K scores
+  equally for all models, and the truncated outputs are where the models disagree.
+- Greedy decoding, thinking disabled. With thinking on, accuracy would be higher and outputs far
+  longer (more decode cost).
+- One community quantization each (`Avesed/*`): another W8A8 recipe (e.g. with SmoothQuant or
+  GPTQ calibration) could lose less.
+
 ## Next steps
+
+1. A task-specific quality check for the user's actual batch task (classification/extraction) when it is known.
+2. If ~3 MMLU points matter: try another INT8 recipe (calibrated SmoothQuant W8A8, or W8A8 that
+   keeps sensitive layers in BF16) and re-run this paired test.
