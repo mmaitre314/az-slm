@@ -11,37 +11,41 @@ rules in [AGENTS.md](AGENTS.md).
 ## Results so far
 
 Best configuration per stack for the reference workload: 512 input + 128 output tokens per request,
-VM busy 100% of the time, list prices plus $0.018/h for the OS disk and public IP
+VM busy 100% of the time (setup, model download and load excluded), Linux list prices from the
+Azure Retail Prices API (2026-10-04) plus $0.018/h for the OS disk and public IP: E16ds_v7
+$1.681/h on demand ($0.325/h Spot), E16ds_v6 $1.326/h ($0.260/h Spot)
 ([COST_MODEL.md](experiments/COST_MODEL.md)). Costs are blended USD per million tokens.
 
-| Stack | Configuration | VM | On demand | Spot-equivalent | Source |
-| --- | --- | --- | ---: | ---: | --- |
-| **vLLM 0.31.0 CPU** | INT8 W8A8 (community quant), 16 prompts, 8 threads | E16ds_v7 | **4.56** | **0.88** | [E09](experiments/E09-vllm-cpu/) (partial) |
-| vLLM 0.31.0 CPU | BF16, 16 prompts | E16ds_v7 | 7.45 | 1.44 | [E09](experiments/E09-vllm-cpu/) (partial) |
-| llama.cpp `11fe021` | Q4_K_M, 32 sequences, no-AMX build | E16ds_v6 | 19.3 | 3.8 | [E13](experiments/E13-emerald-vs-granite/) |
-| llama.cpp `11fe021` | Q4_K_M, 32 sequences, no-AMX build | E16ds_v7 | 23.9 | 4.6 | [E05](experiments/E05-llamacpp-batched/) |
-| OpenVINO GenAI 2026.4.1 | INT4 IR, 4 requests measured; 8+ estimated | E16ds_v7 | 34.1 (est. 19–34 at 8+) | 6.6 (est. 3.6–6.6) | [E10](experiments/E10-openvino-genai/) (partial) |
-| llama.cpp `11fe021`, one sequence | Q4_0, AMX build | E16ds_v7 | 35.4 | 6.8 | [E03](experiments/E03-llamacpp-single-stream/) |
+| Stack | Configuration | VM | On demand | Spot-equivalent | Quality evidence | Source |
+| --- | --- | --- | ---: | ---: | --- | --- |
+| **vLLM 0.31.0 CPU** | **INT8 W8A8 (community quant), 64 prompts, 8 threads** | **E16ds_v6** | **2.39** | **0.47** | = BF16 on GSM8K; −2.75 points on MMLU | [E18](experiments/E18-vllm-emerald-rapids/), [E16](experiments/E16-task-quality/) |
+| vLLM 0.31.0 CPU | INT8 W8A8, 64 prompts | E16ds_v7 | 3.47 | 0.67 | same | [E17](experiments/E17-vllm-scaling-mtp/) |
+| vLLM 0.31.0 CPU | BF16, 16 prompts | E16ds_v7 | 7.45 | 1.44 | reference | [E09](experiments/E09-vllm-cpu/) (partial) |
+| vLLM 0.31.0 CPU | INT4 W4A16, 64 prompts | E16ds_v6 | 9.60 | 1.88 | same as W8A8 | [E18](experiments/E18-vllm-emerald-rapids/) |
+| llama.cpp `11fe021` | Q4_K_M, 32 sequences, no-AMX build | E16ds_v6 | 19.3 | 3.8 | KLD 0.0135, 93.6% top-1 ([E06](experiments/E06-quant-quality/)) | [E13](experiments/E13-emerald-vs-granite/) |
+| OpenVINO GenAI 2026.4.1 | INT4 IR, 4 requests measured; 8+ estimated | E16ds_v7 | 34.1 (est. 19–34 at 8+) | 6.6 (est. 3.6–6.6) | 3 prompts correct | [E10](experiments/E10-openvino-genai/) (partial) |
+| llama.cpp `11fe021`, one sequence | Q4_0, AMX build | E16ds_v7 | 35.4 | 6.8 | KLD 0.0252 | [E03](experiments/E03-llamacpp-single-stream/) |
 
 Read these numbers with care:
 
-- They are **round-1 numbers as of 2026-10-04**. E09, E10 and E12 are partial: their VMs deleted
-  themselves before the raw files were fetched, and the numbers were recovered from the runners'
-  transcripts.
 - This subscription can't deploy Spot VMs (E01). The Spot column is what the same throughput would
-  cost on a subscription that can.
-- Batched llama.cpp rows use a build with AMX compiled out, because llama.cpp's AMX path corrupts
-  output when several sequences are decoded together for this model
-  ([E04](experiments/E04-llamacpp-amx-multiseq-bug/)).
-- The recommendation in [E15](experiments/E15-summary/) is **provisional**: vLLM CPU with INT8 W8A8
-  weights, ~$4.6 per million tokens on demand at 16 prompts. It holds only if E16 confirms that the
-  community W8A8 checkpoint keeps BF16's accuracy; BF16 at $7.45/M is the fallback. E16 (task
-  quality), E17 (vLLM batch scaling, W4A16, MTP) and E18 (vLLM on E16ds_v6) are running.
+  cost on a subscription that can, at 2026-10-04 Spot prices (they change, and evictions aren't modeled).
+- vLLM rows are single runs with random-token prompts. Every row is one VM instance, and identical
+  sizes differ by 9–25% (E08, E18): part of the v6/v7 gap is the instance.
+- Batched llama.cpp rows were measured with 128-token prompts; the 512+128 cost reuses that prefill
+  rate. They use a build with AMX compiled out, because llama.cpp's AMX path corrupts output when
+  several sequences are decoded together for this model ([E04](experiments/E04-llamacpp-amx-multiseq-bug/)).
+- E09, E10 and E12 are partial: their VMs deleted themselves before the raw files were fetched,
+  and the numbers were recovered from the runners' transcripts.
 
-Other round-1 findings: llama.cpp prefill is GEMM-bound and its AMX kernel reaches ~3% of AMX peak
-([E07](experiments/E07-prefill-profile/)); the model's MTP head gives 1.5× single-sequence decode in
-llama.cpp but only +19% at 4 slots ([E12](experiments/E12-speculative-decoding/), partial). See
-[experiments/PLAN.md](experiments/PLAN.md) for current status.
+**Recommendation** ([E15](experiments/E15-summary/)): vLLM CPU with INT8 W8A8 weights on an
+E16ds_v6, 64+ requests in flight, one thread per physical core: ~$2.4 per million tokens on demand.
+Check quality on the actual task first; BF16 costs ~1.6× more. W4A16 is 4–6× slower and 16 threads
+halve throughput on this stack ([E17](experiments/E17-vllm-scaling-mtp/)). The model's MTP head
+(speculative decoding) is accepted 96% of the time on real text but adds only +16% at 64
+sequences. Next ideas (other stacks, CPU-friendlier models, diffusion LMs, managed-API baselines)
+are queued in [RESEARCH.md](experiments/RESEARCH.md); current status is in
+[PLAN.md](experiments/PLAN.md).
 
 ## How it works
 
@@ -177,7 +181,7 @@ describes the process, [PLAN.md](experiments/PLAN.md) is the backlog and status 
 subscription) and the queue of ideas and candidate experiments, and
 [COST_MODEL.md](experiments/COST_MODEL.md) defines prices, formulas and assumptions.
 
-Snapshot of PLAN.md on 2026-10-04 17:30 UTC (current status is in [PLAN.md](experiments/PLAN.md)):
+Snapshot of PLAN.md on 2026-10-04 18:00 UTC (current status is in [PLAN.md](experiments/PLAN.md)):
 
 | ID | Title | Status |
 | --- | --- | --- |
@@ -195,10 +199,10 @@ Snapshot of PLAN.md on 2026-10-04 17:30 UTC (current status is in [PLAN.md](expe
 | [E12](experiments/E12-speculative-decoding/) | Speculative decoding in llama.cpp: draft model, MTP head, n-gram | done (partial; vLLM MTP in E17) |
 | [E13](experiments/E13-emerald-vs-granite/) | Emerald Rapids (v6) vs Granite Rapids (v7), same llama.cpp runs | done |
 | E14 | SGLang CPU backend (Intel AMX kernels) | candidate |
-| [E15](experiments/E15-summary/) | Cross-stack cost and quality summary, recommendation | draft |
+| [E15](experiments/E15-summary/) | Cross-stack cost and quality summary, recommendation | done (rounds 1–2) |
 | [E16](experiments/E16-task-quality/) | Task-level quality of vLLM BF16, W8A8, W4A16 (GSM8K, MMLU) | done |
 | [E17](experiments/E17-vllm-scaling-mtp/) | vLLM batch scaling, W4A16, threads, MTP | done |
-| [E18](experiments/E18-vllm-emerald-rapids/) | vLLM on E16ds_v6 vs E16ds_v7 | running |
+| [E18](experiments/E18-vllm-emerald-rapids/) | vLLM on E16ds_v6 vs E16ds_v7 | done |
 
 ## Working with agents
 
