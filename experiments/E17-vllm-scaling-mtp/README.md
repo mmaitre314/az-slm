@@ -143,6 +143,23 @@ vLLM's spec-decode log lines during these runs show acceptance of 5–13% of dra
 acceptance length 1.05–1.13): random-token prompts make the continuation unpredictable. MTP also
 shrinks the KV cache (16 GiB holds 46,933 tokens instead of 66,446).
 
+### MTP on real text (follow-up, `b2-v6`)
+
+`bench/mtp_real_chain.sh` on `b2-v6` (E16ds_v6, westus2) after E18, 14:13–15:20 UTC: the first 200
+GSM8K test questions (E16's prompt; ~121 input and ~315 output tokens per request), W8A8, 64
+sequences in flight, KV cache 24 GiB, greedy. Raw: [`raw-mtp-real/quality-summary.jsonl`](raw-mtp-real/quality-summary.jsonl),
+per question in [`raw-mtp-real/quality-tasks.jsonl`](raw-mtp-real/quality-tasks.jsonl).
+
+| spec tokens | GSM8K accuracy | wall (s) | output tok/s | vs base | acceptance rate | per-position acceptance | mean acceptance length |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: |
+| 0 (base) | 92.5% | 1318.9 | 47.7 | – | – | – | – |
+| **1** | 92.0% | **1142.2** | **55.5** | **+16%** | 95.9% | 95.9% | 1.96 |
+| 2 | 92.5% | 1169.8 | 54.2 | +14% | 92.0% | 95.5%, 88.6% | 2.84 |
+| 3 | 92.5% | 1257.4 | 50.4 | +6% | 87.2% | 94.9%, 87.6%, 78.9% | 3.62 |
+
+On real text the MTP head is excellent at predicting the next token (96% accepted). Accuracy doesn't change (one
+question flips with 1 token; greedy outputs differ slightly because verification batches change the numerics, see E12).
+
 ## Cost per token
 
 [COST_MODEL.md](../COST_MODEL.md): eastus2 E16ds_v7, $1.681/h all-in on demand, $0.325/h at Spot.
@@ -155,6 +172,8 @@ Assumptions 1–4 apply; each run's wall time is charged entirely to its workloa
 | **W8A8, 64 prompts** | **2.38** | **8.46** | **3.47** | **0.67** |
 | W8A8, 64 prompts, 16 threads | 5.85 | – | 7.04 | 1.36 |
 | W8A8, 64 prompts, MTP 1 (random prompts) | – | 15.1 | 5.52 | 1.07 |
+| W8A8, GSM8K 200, 64 in flight, base (v6, $1.326/h) | – | – | 5.58 (this workload) | 1.09 |
+| W8A8, GSM8K 200, 64 in flight, MTP 1 (v6) | – | – | **4.80** (this workload) | 0.94 |
 | W4A16, 16 prompts | 14.7 | 40.6 | 19.3 | 3.73 |
 | W4A16, 64 prompts | 14.3 | 20.7 | 15.6 | 3.02 |
 
@@ -178,9 +197,16 @@ _Orchestrator, 2026-10-04._
 - **H3 (threads) confirmed, much more strongly than predicted.** 16 threads halve throughput (prefill −59%, mixed −51%).
   Two threads per core contend for the one AMX unit, and the OpenMP barriers wait on the slowest
   sibling. Always bind one thread per physical core for vLLM. For llama.cpp, E08 found the opposite.
-- **H4 (MTP) inconclusive here, by design.** With random-token prompts the MTP head accepts only 5–13% of
-  drafts, so every drafted token is wasted work: −28% to −44%. This says nothing about real text,
-  which the follow-up below measures.
+- **H4 (MTP) rejected for random prompts, by design.** With random-token prompts the MTP head accepts only 5–13% of
+  drafts, so every drafted token is wasted work: −28% to −44%. Benchmarks of speculative decoding must use real text.
+- **H5 (MTP on real text) confirmed at the low end.** Acceptance is 96% for one draft token (predicted ≥ 80%),
+  but the gain at 64 sequences is only +16% (predicted 15–35%). At this batch size a decode step is
+  dominated by per-sequence compute (E17 above: ~1.16 s per 64-token step vs ~0.3 s of weight reads),
+  and verification makes each sequence process 2 tokens per step. So 1.96 tokens per step cost ~1.7×
+  the step time. More draft tokens add more compute than they save (+14% with 2, +6% with 3).
+  For the 512/128 reference workload, where decode is ~53% of the wall time at 64 prompts, the
+  expected gain is ~7–8%: about $2.39 → ~$2.2/M on v6 (estimate, not measured). Use
+  `num_speculative_tokens=1` for decode-heavy jobs. It matters more at smaller batches (llama.cpp single sequence: 1.5×, E12).
 
 ## Threats to validity
 
@@ -193,7 +219,7 @@ _Orchestrator, 2026-10-04._
 
 ## Next steps
 
-1. MTP on real text: see the follow-up results (GSM8K on `b2-v6`).
+1. Measure MTP 1 on a real-text 512/128-like workload (e.g. summarization) at 64–128 prompts, to replace the ~7–8% estimate.
 2. 128 prompts with a larger KV cache, to see where the scaling curve flattens.
 3. vLLM runtime knobs (tcmalloc, the AOT compile-cache error) and a shared-prefix workload (prefix
    caching), as in [RESEARCH.md](../RESEARCH.md).
