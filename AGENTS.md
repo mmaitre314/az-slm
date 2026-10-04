@@ -101,6 +101,18 @@ ARM conventions:
   `-np`, `llama-perplexity` default batching). Single-sequence output is correct. Check output, not
   just tokens/s, and compare against a build with AMX compiled out (`bench/build_noamx.sh`).
 
+## Benchmarking notes
+
+- Experiments live in `experiments/` (see its README for the process, roles and cost model). Keep
+  PLAN.md current.
+- Identical VM sizes vary: two E16ds_v7 instances differed by 9–25% on the same llama.cpp runs
+  (E08). Compare configurations on the same VM, or include a reference run on each VM.
+- Azure Policy installs Microsoft Defender for Endpoint and monitoring agents on every VM. Check
+  `top` before measuring, and note it.
+- llama.cpp on these 8-core/16-vCPU sizes: use 16 threads for prefill-heavy work (+14–25%,
+  E08); pinning doesn't help. Its prefill is GEMM-bound at ~3% of AMX peak (E07), so prefer
+  oneDNN-based stacks when prefill dominates.
+
 ## Docs
 
 - Use the Microsoft Learn MCP tools (`microsoft_docs_search`, `microsoft_docs_fetch`,
