@@ -46,9 +46,9 @@ input and output tokens per stack, quantization and VM, with the quality cost of
 | [E03](E03-llamacpp-single-stream/) | llama.cpp single-sequence prefill/decode per quant, AMX vs no-AMX | bench-e16v7 | runner | done |
 | [E04](E04-llamacpp-amx-multiseq-bug/) | llama.cpp AMX output corruption with several sequences | bench-e16v7 | orchestrator | done (finding) |
 | [E05](E05-llamacpp-batched/) | llama.cpp batch throughput, 1–32 sequences | bench-e16v7 | runner | done |
-| [E06](E06-quant-quality/) | Quantization quality: KL divergence vs BF16 | bench-lc2 | runner | done, report pending |
-| [E07](E07-prefill-profile/) | Why is prefill slow? CPU profile | bench-lc2 | orchestrator + runner | done, report pending |
-| [E08](E08-threads-smt/) | Threads, SMT and pinning; native no-AMX control build | bench-lc2 | runner | done, report pending |
+| [E06](E06-quant-quality/) | Quantization quality: KL divergence vs BF16 | bench-lc2 | runner | done |
+| [E07](E07-prefill-profile/) | Why is prefill slow? CPU profile | bench-lc2 | orchestrator + runner | done |
+| [E08](E08-threads-smt/) | Threads, SMT and pinning; native no-AMX control build | bench-lc2 | runner | done |
 | [E09](E09-vllm-cpu/) | vLLM CPU backend: BF16, INT8 W8A8, INT4 W4A16 | bench-e16v7 | runner | running |
 | [E10](E10-openvino-genai/) | OpenVINO GenAI: INT4/INT8 weights, continuous batching | bench-lc2 | runner | running |
 | [E11](E11-ovms/) | OpenVINO Model Server with continuous batching (OpenAI API) | bench-lc2 | runner | queued |
@@ -56,6 +56,7 @@ input and output tokens per stack, quantization and VM, with the quality cost of
 | [E13](E13-emerald-vs-granite/) | Emerald Rapids (v6) vs Granite Rapids (v7), same llama.cpp runs | bench-v6 | runner (scripted) | done, report pending |
 | E14 | SGLang CPU backend (Intel AMX kernels) | bench-vllm | runner | candidate |
 | E15 | Cross-stack cost and quality summary, recommendation | – | orchestrator | planned |
+| E16 | Task-level quality check across stacks and formats (structured-output agreement with BF16) | any | runner | planned |
 
 Status values: planned, queued, running, done, blocked, candidate (only if earlier results warrant it).
 

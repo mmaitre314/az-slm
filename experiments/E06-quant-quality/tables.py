@@ -46,18 +46,18 @@ def main():
     a = ap.parse_args()
     k = {r["quant"]: r for r in load(HERE / "kld-stats.jsonl")}
 
-    print("### KL divergence vs BF16 (wikitext-2 test, 8 chunks x 512 tokens = 4096 scored tokens; mean ± standard error)\n")
+    print("### KL divergence vs BF16 (wikitext-2 test, 8 chunks x 512 tokens, second half of each window scored = 2040 tokens; mean ± standard error)\n")
     rows = [[q, f"{k[q]['kld_mean']:.5f} ± {k[q]['kld_mean_err']:.5f}", f"{k[q]['kld_median']:.5f}", f"{k[q]['kld_p99']:.4f}",
              f"{k[q]['kld_p999']:.3f}", f"{k[q]['kld_max']:.3f}", pm(k[q]['same_top_p_pct'], k[q].get('same_top_p_pct_err'), "%.2f"),
              pm(k[q]['dp_rms_pct'], k[q].get('dp_rms_pct_err'), "%.2f")] for q in ORDER]
     print(table(["quant", "mean KLD (nats)", "median KLD (nats)", "99% KLD (nats)", "99.9% KLD (nats)", "max KLD (nats)",
                  "same top-1 token (%)", "RMS Δp (%)"], rows))
 
-    print("\n### Perplexity on the same 4096 tokens (BF16: 6.6104 ± 0.3589 from the saved logits, 6.6159 ± 0.3600 'Final estimate' of the BF16 run)\n")
+    print("\n### Perplexity on the same 2040 scored tokens (BF16: 6.6104 ± 0.3589 from the saved logits, 6.6159 ± 0.3600 'Final estimate' of the BF16 run)\n")
     rows = [[q, pm(k[q]['ppl_q'], k[q]['ppl_q_err'], "%.4f"), pm(k[q]['ppl_ratio'], k[q]['ppl_ratio_err'], "%.4f"),
              pm(k[q]['ln_ppl_ratio'], k[q]['ln_ppl_ratio_err'], "%.4f"), f"{k[q]['cor_lnppl_pct']:.2f}", f"{k[q]['s_per_pass']:.0f}"]
             for q in ORDER]
-    print(table(["quant", "PPL", "PPL / PPL(BF16)", "ln(PPL ratio)", "correlation of ln PPL with BF16 (%)", "s per evaluation pass"], rows))
+    print(table(["quant", "PPL", "PPL / PPL(BF16)", "ln(PPL ratio)", "correlation of ln PPL with BF16 (%)", "s per pass (4 windows = 2048 tokens)"], rows))
 
     size, e3 = {}, {}
     for r in load(EXP / "E03-llamacpp-single-stream" / "llama-bench.jsonl"):

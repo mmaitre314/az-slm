@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | done (2026-10-04); measurements, cost and draft analysis written 2026-10-04, awaiting orchestrator review |
+| Status | done (measured 2026-10-04 ~02:55–03:40 UTC; reported and reviewed 2026-10-04) |
 | VM | `bench-lc2` (Standard_E16ds_v7, northcentralus, Regular) |
 | Stack | llama.cpp `11fe02151f79` (2026-10-04): `build` = native (-march=native, AMX); `build-noamx` = explicit AVX-512 flag list without AMX; `build-native-noamx` = -march=native minus AMX (clean control) |
 | Model | `bartowski/Qwen3.8-27B-GGUF` @ `0c92138c51` (Q4_0, IQ4_XS, Q4_K_M, Q8_0) |
@@ -114,25 +114,42 @@ USD per million tokens, single sequence, `bench-lc2` rates. Formulas from [COST_
 
 Assumptions:
 
-1. All-in hourly price = VM + $0.018 disk and IP: $1.663 + 0.018 = $1.681/h pay-as-you-go (what we paid), $0.3073 + 0.018 = $0.325/h Spot (not available on this subscription; shown for comparison). The brief gives the same all-in price for `bench-lc2` (northcentralus) as for eastus2; COST_MODEL.md lists eastus2 and westus3 but not northcentralus, so the northcentralus price itself was not checked.
+1. All-in hourly price = VM + $0.018 disk and IP: $1.663 + 0.018 = $1.681/h pay-as-you-go (what we paid), $0.3073 + 0.018 = $0.325/h Spot (not available on this subscription; shown for comparison). PLAN.md lists the same $1.681/h all-in for `bench-lc2` (northcentralus) as for `bench-e16v7` (eastus2); COST_MODEL.md lists eastus2 and westus3 but not northcentralus, so the northcentralus price itself was not checked.
 2. 100% utilization, steady state; VM boot, model download and model load (a minute or more per `llama-bench` invocation, repack included) are excluded.
 3. One sequence at a time. E05 shows the effect of batching, but E05's AMX batched numbers are invalid output (E04), so batched cost comes from the no-AMX control only.
 4. Prefill rate = `pp512` on an empty context, decode rate = `tg128` (context 0 to 128); the reference request decodes at a longer context, and E03's A3 shows that prefill speed depends on prompt length on the AMX build.
 5. Output correctness of the AMX rows is verified for Q4_K_M only (E04). The 16-thread rows were not checked for output.
 6. List prices; Spot evictions not modeled; instance variance (+9-23% for this VM over `bench-e16v7`) is inside every number, so the blended cost figures here are 13-19% lower than E03's for the same configuration.
 
-## Analysis (draft, for orchestrator review)
+## Analysis
+
+### Orchestrator review and conclusions
+
+- **H1**: the prefill half is supported (AMX ×1.31–1.68 for Q4_0/Q4_K_M/Q8_0; IQ4_XS ×0.88). The decode half is refuted. The decode
+  gain (×1.15–2.26) is real and not a compiler-flag artifact; it comes from the AMX backend's weight layout and
+  single-row kernels, not from tiles (see E03's review). **H2 is refuted favorably**: 16 threads give +14–25% prefill and
+  +3% decode, and pinning makes no difference.
+- **Operational guidance (added to AGENTS.md benchmarking notes)**: run llama.cpp prefill-heavy work with 16 threads on
+  these 8-core/16-vCPU sizes; don't bother pinning.
+- **Consequence for E05's baseline**: E05 ran 8 threads. With 16 threads its prefill-dominated blended cost would
+  likely drop by ~10–20% (from $23.9/M toward ~$20/M on-demand). That's not measured; it's noted in E15 as an adjustment
+  range, not a number.
+- **Instance variance** (bench-lc2 runs 9–25% faster than bench-e16v7 on identical configurations) means cross-VM
+  comparisons need a common reference run. E15 normalizes by quoting each stack against the llama.cpp numbers from the
+  same VM where possible.
+
+### Reporter's analysis (reviewed)
 
 **H1 (clean control: AMX decode effect ~0, prefill gain stays 1.3-2x): decode half refuted, prefill half supported for three of four quants.**
 
-- Decode: AMX/control is 2.26x (Q4_0), 2.18x (IQ4_XS), 1.15x (Q4_K_M) and 1.58x (Q8_0). Nothing shrinks to ~0, and for Q4_0 and Q8_0 the gain is larger than against E03's explicit-flag `build-noamx` (1.49x and 1.33x). So E03's decode gains are not an artifact of compiler flags; if anything they were understated, except that against the faster of the two no-AMX builds (E03's `build-noamx`, see A2) the Q4_0 gain is 1.5x, not 2.3x. They come from what the AMX build does differently at M = 1: it routes the weights through its own repacked `AMX` buffer and kernels. Single-token decode cannot fill a 16-row tile, so this is the AMX backend's weight layout and its non-tile kernels, not tile hardware (the profile that would show it is a decode profile, not run; E07 profiles prefill only). The effect is a bandwidth-utilization effect: the AMX build reads 71-99 GB/s, the control 32-68 GB/s (table above), so the control leaves 30-70% of the observed ~100 GB/s unused and is limited by dequantization compute, not DRAM.
+- Decode: AMX/control is 2.26x (Q4_0), 2.18x (IQ4_XS), 1.15x (Q4_K_M) and 1.58x (Q8_0). Nothing shrinks to ~0. For Q4_0, IQ4_XS and Q8_0 the gain is larger than against E03's explicit-flag `build-noamx` (1.49x, 1.94x, 1.33x), for Q4_K_M about the same (1.08x, 1.15x), so E03's decode gains are not a compiler-flag artifact. Against the faster of the two no-AMX builds (E03's `build-noamx`, see A2) the Q4_0 gain is 1.5x, not 2.3x. The gain comes from what the AMX build does differently at M = 1: it routes the weights through its own repacked `AMX` buffer and kernels. Single-token decode cannot fill a 16-row tile, so this is the AMX backend's weight layout and its non-tile kernels, not tile hardware (a decode profile would show it; E07 profiles prefill only, so this is inference). It shows up as bandwidth utilization: the AMX build reads 71-99 GB/s, the control 32-68 GB/s (table above), so the control leaves 30-70% of the observed ~100 GB/s unused and is probably limited by dequantization compute, not DRAM.
 - Prefill: 1.31x (Q4_0), 1.53x (Q4_K_M), 1.68x (Q8_0) are inside the predicted 1.3-2x band. IQ4_XS is 0.88x: AMX is slower than the control, and the control's 40.3 tok/s is the highest prefill of any configuration measured on this VM. The ratios match E03's against `build-noamx` within 0.08, so compile flags do not matter for prefill and the earlier AMX/no-AMX prefill ratios stand. AMX peak utilization is 2.4-3.3% (1.4-1.9 TFLOPS of 59 TOPS), the control reaches 12-30% of the VNNI peak (that peak is an assumption).
 - H1 as a whole is half right: the "AMX gain" for prefill is real but small (1.3-1.7x for three quants, a loss for IQ4_XS), and for decode it is large and not a compiler-flag artifact.
 
 **H2 (16 threads add ≤10% to prefill, may slow decode; pinning adds a few percent): refuted on all three points, in the favorable direction.**
 
-- 16 threads (both hyperthreads of each of the 8 cores) raise prefill by +25.1% (Q4_K_M, 34.9 to 43.6 tok/s) and +14.1% (Q4_0, 25.4 to 29.0 tok/s), more than the predicted ≤10%, and raise decode by +2.6% and +3.4% instead of slowing it. The two hyperthreads of a core share one AMX unit, so the gain means the unit is not saturated by one thread. That is consistent with E07's profile, which finds the AMX kernel stalled on tile loads (69% of its samples sit right after `tileloadd`, 0.1% on `tdpbssd`), leaving idle cycles a second thread can fill. That mechanism is a hypothesis (no PMU in the VM, no experiment isolates it). Even at 16 threads prefill reaches only 1.6-2.4 TFLOPS (2.7-4.0% of AMX peak).
-- Decode barely moves with 16 threads (+3%), and at 95-99 GB/s for Q4_0 and Q8_0 it sits on a plateau near 100 GB/s on 8 cores. A per-core limit (line-fill buffers are shared by the two hyperthreads) would explain it; not tested. So a per-core or per-VM limit, not core count, appears to set the ~100 GB/s (E13's brief quotes 12 DDR5-6400 channels for the socket; neither that peak nor this VM's STREAM bandwidth was measured).
+- 16 threads (both hyperthreads of each of the 8 cores) raise prefill by +25.1% (Q4_K_M, 34.9 to 43.6 tok/s) and +14.1% (Q4_0, 25.4 to 29.0 tok/s), more than the predicted ≤10%, and raise decode by +2.6% and +3.4% instead of slowing it. The two hyperthreads of a core share one AMX unit, so the gain means the unit is not saturated by one thread. That is consistent with E07's profile, which finds the AMX kernel stalled on tile loads (69% of its samples sit right after `tileloadd`, 0.1% on `tdpbssd`), leaving idle cycles a second thread can fill. That mechanism is a hypothesis (E07's profile is time-based sampling, and no experiment isolates it). Even at 16 threads prefill reaches only 1.6-2.4 TFLOPS (2.7-4.0% of AMX peak).
+- Decode barely moves with 16 threads (+3%), and at 95-99 GB/s for Q4_0 and Q8_0 it sits on a plateau near 100 GB/s on 8 cores. Extra hyperthreads do not lift the plateau; whether more cores would was not tested (this size has 8 cores), so it may be a per-core limit (line-fill buffers are shared by the two hyperthreads of a core) or a per-VM limit. E13's hypotheses quote 12 DDR5-6400 channels for the socket; neither that peak nor this VM's STREAM bandwidth was measured.
 - Pinning (one hyperthread per core, strict) changes prefill by +1.4% (Q4_K_M) and +0.2% (Q4_0) and decode by +0.2% and +0.4%: below the predicted "few percent". The Q4_K_M +1.4% is partly one low repetition in the unpinned run (34.4, 35.1, 35.1 tok/s; against the median of the unpinned runs the gain is +0.9%), so pinning is a null result. Guest-level pinning only fixes guest threads to vCPUs; whether the hypervisor keeps the two vCPUs of a pair on one core was not checked.
 - Practical consequence: use 16 threads for prefill-heavy llama.cpp jobs on this VM. It costs nothing (the VM bills 16 vCPUs anyway) and lowers the blended single-sequence cost by 7-9% (Q4_0 $30.8 to $28.5/M, Q4_K_M $31.6 to $28.9/M on-demand). Not checked: 16 threads with several sequences, or with the control build.
 
@@ -141,7 +158,7 @@ Assumptions:
 - A1: IQ4_XS prefill is faster on the control (40.3 tok/s, 2.2 TFLOPS) than on the AMX build (35.6 tok/s), and this is the fastest prefill measured; E03 saw the same direction (0.93x). The AMX kernel for IQ4_XS is worse than the generic AVX-512 path. Only Q4_0 was profiled (E07).
 - A2: Q4_0 decode on the control is 2.57 tok/s on this VM, and E05 measured 2.44 tok/s for the same build on `bench-e16v7`, while E03's explicit-flag `build-noamx` gets 3.55 tok/s on `bench-e16v7` (about 3.9 tok/s if scaled by this VM's +9%). The two no-AMX builds use identical weight layouts (same `CPU_REPACK` sizes) and differ only in compiler flags, yet differ by about 1.4-1.5x in Q4_0 decode (not in IQ4_XS, Q4_K_M, Q8_0). So "no-AMX" is not a single baseline: the control (-march=native) is the slower one. E07's control profile shows a `gemm_q4_b32_8x8_q8_0_lut_avx<block_iq4_nlx8>` kernel; whether `build-noamx` selects a different kernel was not checked.
 - A3: control Q4_K_M `pp512` is noisy (22.3-23.7 tok/s) compared with every other row; the 1.53x ratio carries about ±5%.
-- A4: Decode bandwidth differs by quant on the same build (AMX: Q8_0 99 GB/s, Q4_0 95, Q4_K_M 78, IQ4_XS 71), so decode is bandwidth-bound for Q8_0 and Q4_0 but compute-bound in dequantization for IQ4_XS and Q4_K_M.
+- A4: Decode bandwidth differs by quant on the same build (AMX: Q8_0 99 GB/s, Q4_0 95, Q4_K_M 78, IQ4_XS 71), which suggests decode is near the bandwidth plateau for Q8_0 and Q4_0 but limited by dequantization compute for IQ4_XS and Q4_K_M (not profiled).
 
 ## Threats to validity
 

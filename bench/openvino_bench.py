@@ -43,7 +43,7 @@ import openvino_genai as g  # noqa: E402
 sched = C.make_scheduler(args.max_num_seqs, args.cache_gb, args.prefix_caching,
                          args.max_batched_tokens or None, not args.no_split_fuse)
 props = json.loads(args.props)
-pipe, kind, load_s = C.load_pipe(args.model, args.pipe, sched, props)
+pipe, kind, load_s = C.load_pipe(args.model, args.pipe, None if args.pipe == "vlm" else sched, props)
 print(f"loaded with {kind} in {load_s:.1f}s rss {C.read_proc_status('VmRSS')} GB; {sched.to_string()!r}", flush=True)
 tok = pipe.get_tokenizer()
 out_path = os.environ.get("OUT", "/mnt/data/results/openvino.jsonl")
@@ -106,7 +106,10 @@ def run_once(n, in_len, out_len, shared_prefix=0):
     cfgs = [cfg_for(out_len) for _ in range(n)]
     load1 = os.getloadavg()[0]
     t0 = time.perf_counter()
-    res = pipe.generate(inputs, cfgs)
+    if kind == "vlm":  # stateful (non-batching) VLM pipeline: one prompt after the other
+        res = [pipe.generate(x, generation_config=c) for x, c in zip(inputs, cfgs)]
+    else:
+        res = pipe.generate(inputs, cfgs)
     wall = time.perf_counter() - t0
     out_tokens = 0
     in_tokens_seen = 0
@@ -156,10 +159,10 @@ def emit(row):
 # warm-up: loads the weights into page cache, creates kernels for typical shapes
 t = time.time()
 if args.warmup == "full":
-    pipe.generate([tensor(make_ids(512)) for _ in range(4)], [cfg_for(8)] * 4)
-    pipe.generate([tensor(make_ids(32))], [cfg_for(16)])
+    run_once(4, 512, 8)
+    run_once(1, 32, 16)
 elif args.warmup == "quick":
-    pipe.generate([tensor(make_ids(128))], [cfg_for(4)])
+    run_once(1, 128, 4)
 print(f"warmup {time.time() - t:.1f}s rss {C.read_proc_status('VmRSS')} GB", flush=True)
 
 for wl in args.workloads.split(","):

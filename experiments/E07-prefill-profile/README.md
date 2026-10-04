@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | done (2026-10-04); measurements, cost and draft analysis written 2026-10-04, awaiting orchestrator review |
+| Status | done (profiled 2026-10-04; reported and reviewed 2026-10-04) |
 | VM | `bench-lc2` (Standard_E16ds_v7, northcentralus, Regular) |
 | Stack | llama.cpp `11fe02151f79` (2026-10-04): `build` = native (-march=native, AMX); `build-noamx` = explicit AVX-512 flag list without AMX; `build-native-noamx` = -march=native minus AMX (clean control); `perf` (cpu-clock sampling) |
 | Model | `bartowski/Qwen3.8-27B-GGUF` @ `0c92138c51` (Q4_0) |
@@ -94,9 +94,25 @@ Prefill only: this experiment measures no decode. For the output-token and blend
 | AMX build | what-if: GEMM 9x faster | 101 | 4.6 | 0.9 |
 | AMX build | what-if: GEMM time to zero (bound) | 161 | 2.9 | 0.6 |
 
-Assumptions: all-in $1.681/h on-demand (VM $1.663 + $0.018 disk and IP; the brief gives the same price for northcentralus as for eastus2), $0.325/h Spot (not available on this subscription); 100% utilization; model load, VM boot and the warm-up pass excluded; a 512-token prompt on an empty context; E08's 16-thread Q4_0 run gives 28.97 tok/s, or $16.1/M on-demand ($3.1/M Spot), and is not profiled here.
+Assumptions: all-in $1.681/h on-demand (VM $1.663 + $0.018 disk and IP; PLAN.md lists the same $1.681/h for `bench-lc2` in northcentralus as for `bench-e16v7` in eastus2), $0.325/h Spot (not available on this subscription); 100% utilization; model load, VM boot and the warm-up pass excluded; a 512-token prompt on an empty context; E08's 16-thread Q4_0 run gives 28.97 tok/s, or $16.1/M on-demand ($3.1/M Spot), and is not profiled here.
 
-## Analysis (draft, for orchestrator review)
+## Analysis
+
+### Orchestrator review and conclusions
+
+- **H1 is refuted, decisively**: the 48 Gated DeltaNet layers cost ~2% of prefill. The hybrid architecture is not why
+  CPU prefill is slow.
+- **The bottleneck is software**: 84–91% of prefill is quantized GEMM, and llama.cpp's AMX tile kernel spends its time
+  around tile loads (69% of samples), not tile multiplies (0.1%), reaching ~3% of AMX peak. That's consistent with E08
+  (a second hyperthread per core adds 14–25%, so the AMX unit is idle much of the time) and with E03's A3 (prefill
+  efficiency depends on how the batch is formed). A well-blocked AMX GEMM (oneDNN, used by vLLM, OpenVINO and PyTorch) should
+  run several times faster on the same hardware. The Amdahl ceiling here is ~160 tok/s if GEMMs cost nothing.
+- **Decision impact**: don't invest further in llama.cpp tuning for this workload. E09 (vLLM) and E10 (OpenVINO)
+  test whether oneDNN-based stacks collect that prize. If one does, its prefill rate is the main input to the final cost.
+- The open anomaly A5 (4×128 vs 1×512 prompts on the same build) stays open; a hardware-counter profile (not
+  available in this VM: `perf` falls back to cpu-clock) or a llama.cpp-side timing breakdown would be needed.
+
+### Reporter's analysis (reviewed)
 
 **H1 (non-GEMM work, especially the Gated DeltaNet recurrence, dominates prefill): refuted.** GEMM kernels take 84.3% of the samples on the AMX build and 90.9% on the control. The Gated DeltaNet scan takes 2.2% (AMX) and 1.7% (control), and with `ssm_conv` and `concat` (the other linear-attention ops that show up) 4.5% and 3.4%. Full attention is 0.7% and 0.5%, norms and activations about 1%. Everything that is not a GEMM, a weight repack or OpenMP waiting adds up to 8.5% (AMX build) and 6.1% (control). The 48 linear-attention layers are not what holds prefill back at 512 tokens.
 
@@ -105,7 +121,7 @@ Assumptions: all-in $1.681/h on-demand (VM $1.663 + $0.018 disk and IP; the brie
 - Dominance: supported (84-91% above).
 - Low efficiency: supported. Counting only GEMM time, the AMX build runs at about 1.64 TFLOPS equivalent, 2.8% of the 59 TOPS AMX peak, and only 1.43x faster than the control's AVX-512 kernel (1.15 TFLOPS in-kernel, 15.5% of the 7.4 TOPS VNNI peak), although the AMX peak is 8x the VNNI peak. The control's kernel is itself far from its peak: the multiply-accumulate `vpdpbusd` holds 10.5% of its samples, and byte shuffles, sign handling and loads the rest.
 - "AMX is not used for most shapes": refuted. The AMX tile kernel is 78.0% of all samples and `tinygemm_kernel_amx` for the `q4_1`, `q8_0` and `q6_K` tensors another 6.3%; no non-AMX quantized-GEMM symbol appears among the AMX build's top 25 (the control, by contrast, spends 8.1% in generic `ggml_vec_dot_q4_1_q8_1` and `q6_K`, the types without a repacked kernel). So all the quantized matmuls of this file take the AMX path. The profile cannot say how many distinct matrix shapes there are, only that none visibly falls back.
-- What the AMX kernel is doing instead of multiplying: only 0.1% of its samples sit on `tdpbssd`, and 69% sit right after a `tileloadd` (8% after a `tilestored`), at two hot sites. Reading of the timer-based samples (hedged): the core's oldest unretired instruction is a tile load or its immediate successor, so the kernel spends most of its time waiting for tile loads to complete, not multiplying. The tile units are idle most of the time, which also fits E08's finding that a second hyperthread per core adds 14-25% prefill. What the loads wait for cannot be told from a software-timer profile; candidates, none tested: (a) the activation tile misses L2 at 512 rows (the int8 activations of one 512-token ubatch are 2.6 MB for a projection with K = 5120, more for any with larger K, against a 2 MB L2 per core on Granite Rapids, which I did not verify on this VM); (b) the load reads the scratch buffer that the immediately preceding AVX-512 stores just wrote, which a tile load cannot serve by store forwarding; (c) the 16-row strided tile load itself is slow. Hypothesis (a) would also explain E03's A3 (128-token prompts prefill at 33-35 tok/s on the AMX build, against 21 tok/s for 512 tokens, both measured on `bench-e16v7`).
+- What the AMX kernel is doing instead of multiplying: only 0.1% of its samples sit on `tdpbssd`, and 69% sit right after a `tileloadd` (8% after a `tilestored`), at two hot sites. Reading of the timer-based samples (hedged): the core's oldest unretired instruction is a tile load or its immediate successor, so the kernel spends most of its time waiting for tile loads to complete, not multiplying. The tile multiply units are therefore likely idle most of the time, which also fits E08's finding that a second hyperthread per core adds 14-25% prefill. What the loads wait for cannot be told from a software-timer profile; candidates, none tested: (a) the activation tile misses L2 at 512 rows (the int8 activations of one 512-token ubatch are 2.6 MB for a projection with K = 5120, more for any with larger K, against a 2 MB L2 per core on Granite Rapids, which I did not verify on this VM); (b) the load reads the scratch buffer that the immediately preceding AVX-512 stores just wrote, which a tile load cannot serve by store forwarding; (c) the 16-row strided tile load itself is slow. E03's A3 argues against (a) as the whole story: on the AMX build four 128-token prompts in one 512-row ubatch prefill at 35 tok/s, against 21 tok/s for one 512-token prompt (both on `bench-e16v7`), although the row count and the matrix shapes are the same. The profile cannot explain that gap either, since attention and the recurrence are small at `pp512`; a profile of the 4 x 128 case is the direct comparison.
 - Ceiling: if the GEMM share could be accelerated 4x, 9x or without bound, prefill would reach about 69, 101 or 161 tok/s on this VM (Amdahl, table above), against 25 measured. That is the size of the prize if the kernel stall is fixable in software; it is not a prediction.
 
 **Answer to the question.** Nearly all the time (84%) is in the quantized GEMMs, which run through AMX but use only ~3% of its peak because the tile kernel stalls on tile loads; all non-GEMM compute (recurrence, convolution, attention, norms) together takes about 8%.
@@ -116,6 +132,7 @@ Assumptions: all-in $1.681/h on-demand (VM $1.663 + $0.018 disk and IP; the brie
 - A2: the AMX build is only 1.43x faster in-kernel than the AVX-512 LUT kernel of the control, and for IQ4_XS and Q6_K it was slower than the non-AMX builds in E03/E08. Only Q4_0 is profiled, so those cases are unexplained.
 - A3: `clear_page_erms` (1.3% on `build`) and `pack_qs`/`unpack_B` (2.0%) show that the profile includes model-load work; and a profile that holds two passes can't separate warm-up from timed execution. The kernel shares are not affected by more than a few percent.
 - A4: the OpenMP wait share is small (2.8% on `build`, 1.5% on the control): thread imbalance is not what limits prefill.
+- A5: E03's A3 (the same AMX build prefills 4 x 128 tokens in one 512-row ubatch at 35 tok/s but 1 x 512 tokens at 21 tok/s) is not explained: the `pp512` profile shows GEMM-dominated time with the stall at tile loads, and the GEMM shapes are the same in both cases. Something other than shape (sequence length, sequence count, or how `llama-bench` and `llama-batched-bench` drive the model) changes the GEMM's efficiency.
 
 ## Threats to validity
 
@@ -127,7 +144,7 @@ Assumptions: all-in $1.681/h on-demand (VM $1.663 + $0.018 disk and IP; the brie
 
 ## Next steps
 
-- Prompt-length / ubatch sweep on the AMX build (`pp` 64-1024, `-ub` 64-512, Q4_0, 8 and 16 threads): if prefill per token falls as the ubatch grows past a few hundred, the activation tile loads miss cache (hypothesis a) and a smaller ubatch is a free speed-up; E03's A3 suggests it is worth +50% at 128 tokens.
+- Profile E05's prefill shape (4 sequences x 128 tokens in one 512-row ubatch, AMX build, Q4_0) next to this `pp512` profile: same matrix shapes, 1.7x the speed (E03 A3). Whatever differs in the instruction-level profile is the stall's cause. Add a prompt-length / ubatch sweep on the AMX build (`pp` 64-1024, `-ub` 64-512, 8 and 16 threads); if prefill per token rises as the ubatch shrinks, the activation tile loads miss cache (hypothesis a) and a smaller ubatch is a free speed-up.
 - Repeat the profile for IQ4_XS and Q8_0 on both builds to explain E03/E08's IQ4_XS and Q6_K results, and profile `tg128` on both builds, since E08 finds a large decode gain that cannot come from tile multiplies at M = 1.
 - Profile with 16 threads (does the second hyperthread fill the stall?) and, if a bare-metal or PMU-enabled size is available, collect `perf stat` cache and tile counters; check whether Azure exposes the PMU on any E16-class size.
-- If hypothesis (b) or (a) holds, the fix is in llama.cpp's `ggml-cpu/amx/mmq.cpp` (blocking or prefetch for the activation tile, a direct packed-weight layout that skips the scratch buffer). Whether to take this upstream is for the orchestrator.
+- If hypothesis (b) or (a) holds, the fix is in llama.cpp's AMX backend (`ggml_backend_amx_mul_mat`; blocking or prefetch for the activation tile, a direct packed-weight layout that skips the scratch buffer). Whether to take this upstream is for the orchestrator.
