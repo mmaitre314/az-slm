@@ -1,0 +1,12 @@
+2 info,cpu,isa:Intel AVX10.1 and Intel AMX with bfloat16, float16 and 8-bit integer support,,:
+2 primitive,info,template:operation,engine,primitive,prop_kind:
+1 graph,info,template:operation,engine,partition_id,op_names:
+2 primitive,exec,cpu,reorder,jit:uni,src:bf16
+1 info,oneDNN v3.12.0 (commit 80afa71049cd69a3df32adcccb623b12cd7baa22),,,,:
+84 primitive,exec,cpu,matmul,brg_matmul:avx10_1_512_amx,src:bf16
+1 info,graph,backend,0:dnnl_backend,,:
+2 info,cpu,runtime:OpenMP,nthr:8,,:
+1 info,oneDNN v3.13.0 (commit 0e2a5bfeef1bfbffc3137464606540233086ce9b),,,,:
+15963136 ukernel,exec,cpu,brgemm,,src:u8
+69552 ukernel,exec,cpu,brgemm,,src:bf16
+2 info,gpu,runtime:none,,,:

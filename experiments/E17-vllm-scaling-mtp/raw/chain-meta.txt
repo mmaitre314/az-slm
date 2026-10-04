@@ -1,0 +1,29 @@
+date 2026-10-04T12:49:00Z  host b2-vllm  profile e17  steps: meta ref setup mtp_check correct w8a8_n16 w8a8_n32 w8a8_n64 w4a16_n16 w4a16_n64 w8a8_t16_n64 mtp_n16 mtp_n64 mtp2_n16 final
+vmSize Standard_E16ds_v7 location eastus2
+CPU(s): 16
+Model name: Intel(R) Xeon(R) 6973P-C
+BIOS Model name: Intel(R) Xeon(R) 6973P-C None CPU @ 2.6GHz
+Thread(s) per core: 2
+Core(s) per socket: 8
+CPU(s) scaling MHz: 118%
+CPU max MHz: 2600.0000
+CPU min MHz: 800.0000
+amx flags: amx_bf16 amx_int8 amx_tile
+kernel 6.17.0-1022-azure  PRETTY_NAME="Ubuntu 24.04.4 LTS"
+llama.cpp dd266785c2595775001c1c714bd9d92b3ef34cde 2026-10-04T14:10:43+02:00
+bind8=0,2,4,6,8,10,12,14 bind16=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 image=vllm/vllm-openai-cpu:latest-x86_64
+--- top (before any measurement)
+top - 12:49:00 up 25 min,  0 user,  load average: 0.66, 2.03, 2.18
+Tasks: 266 total,   1 running, 264 sleeping,   0 stopped,   1 zombie
+%Cpu(s):  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+MiB Mem : 128808.6 total,  68033.1 free,   2413.0 used,  59601.7 buff/cache     
+MiB Swap:      0.0 total,      0.0 free,      0.0 used. 126395.6 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+  15627 azureme+  20   0 2766668  20060  15324 S  10.0   0.0   0:01.67 Metrics+
+      1 root      20   0   23052  14572   9848 S   0.0   0.0   1:04.77 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.02 kthreadd
+      3 root      20   0       0      0      0 S   0.0   0.0   0:00.00 pool_wo+
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+

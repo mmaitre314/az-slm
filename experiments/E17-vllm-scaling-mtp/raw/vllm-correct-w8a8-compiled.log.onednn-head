@@ -1,0 +1,40 @@
+onednn_verbose,v1,info,oneDNN v3.13.0 (commit 0e2a5bfeef1bfbffc3137464606540233086ce9b)
+onednn_verbose,v1,info,cpu,runtime:OpenMP,nthr:8
+onednn_verbose,v1,info,cpu,isa:Intel AVX10.1 and Intel AMX with bfloat16, float16 and 8-bit integer support
+onednn_verbose,v1,info,gpu,runtime:none
+onednn_verbose,v1,primitive,info,template:operation,engine,primitive,implementation,prop_kind,memory_descriptors,attributes,auxiliary,problem_desc,exec_time
+onednn_verbose,v1,primitive,exec,cpu,reorder,jit:uni,undef,src:bf16::blocked:ba::f0 dst:bf16::blocked:BA16a32b2a::f0,,,5120x248320,113.583
+onednn_verbose,v1,primitive,exec,cpu,reorder,jit:uni,undef,src:bf16::blocked:ba::f0 dst:bf16::blocked:BA16a32b2a::f0,,,5120x248320,114.239
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0319824
+onednn_verbose,v1,info,oneDNN v3.12.0 (commit 80afa71049cd69a3df32adcccb623b12cd7baa22)
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0439453
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0380859
+onednn_verbose,v1,info,cpu,runtime:OpenMP,nthr:8
+onednn_verbose,v1,info,cpu,isa:Intel AVX10.1 and Intel AMX with bfloat16, float16 and 8-bit integer support
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0319824
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0461426
+onednn_verbose,v1,info,gpu,runtime:none
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0239258
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0249023
+onednn_verbose,v1,info,graph,backend,0:dnnl_backend
+onednn_verbose,v1,primitive,info,template:operation,engine,primitive,implementation,prop_kind,memory_descriptors,attributes,auxiliary,problem_desc,exec_time
+onednn_verbose,v1,graph,info,template:operation,engine,partition_id,partition_kind,op_names,data_formats,logical_tensors,fpmath_mode,implementation,backend,exec_time
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0349121
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0229492
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0229492
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0180664
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.019043
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.019043
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.019043
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0270996
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0180664
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0290527
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0249023
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0200195
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0231934
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0170898
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0239258
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.026123
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0180664
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0170898
+onednn_verbose,v1,ukernel,exec,cpu,brgemm,,undef,src:u8::blocked:ab::f0 wei:s8::blocked:ab::f0 dst:s32::blocked:ab::f0,,bs:1 beta:0,32x5120:5120x32,0.0229492

@@ -1,0 +1,8 @@
+{
+    "model_id": "/mnt/data/models/Avesed/Qwen3.8-27B-INT8-W8A8",
+    "elapsed_time": 176.34507202900022,
+    "num_requests": 32,
+    "total_num_tokens": 20480,
+    "requests_per_second": 0.18146240000819275,
+    "tokens_per_second": 116.13593600524335
+}
