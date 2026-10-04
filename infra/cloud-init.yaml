@@ -71,14 +71,18 @@ write_files:
       STATE=/var/lib/azslm
       mkdir -p "$STATE"
       now=$(date +%s)
-      last=$(cat "$STATE/last_active" 2>/dev/null || echo "$now")
+      last=$(cat "$STATE/last_active" 2>/dev/null)
+      [[ "$last" =~ ^[0-9]+$ ]] || last=$now
+      # A boot counts as activity (state on the OS disk survives deallocation).
+      boot=$(( now - $(cut -d. -f1 /proc/uptime) ))
+      [ "$boot" -gt "$last" ] && last=$boot
       if [ -f "$STATE/heartbeat" ]; then
         hb=$(stat -c %Y "$STATE/heartbeat")
         [ "$hb" -gt "$last" ] && last=$hb
       fi
       load15=$(cut -d' ' -f3 /proc/loadavg)
       if awk -v l="$load15" 'BEGIN { exit !(l >= 1.0) }'; then last=$now; fi
-      echo "$last" > "$STATE/last_active"
+      echo "$last" > "$STATE/last_active.tmp" && mv "$STATE/last_active.tmp" "$STATE/last_active"
       idle=$(( now - last ))
       limit=$(( IDLE_HOURS * 3600 ))
       logger -t azslm-watchdog "idle ${idle}s of ${limit}s, load15 ${load15}"
@@ -118,6 +122,7 @@ write_files:
       # One-time setup: Python venv with the Hugging Face CLI, and llama.cpp built natively
       # (GGML_NATIVE=ON compiles the AMX kernels on AMX hosts).
       set -euxo pipefail
+      echo "data volume: $(findmnt -no SOURCE,FSTYPE /mnt/data || echo 'none: /mnt/data is on the OS disk')"
       mkdir -p /var/lib/azslm /mnt/data/models /mnt/data/results
       python3 -m venv /opt/azslm/venv
       /opt/azslm/venv/bin/pip install -q -U pip 'huggingface_hub[hf_xet]'

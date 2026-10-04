@@ -6,6 +6,7 @@ carry no Authorization header. Azure context comes from environment variables (s
 
 import json
 import os
+import re
 import time
 import urllib.error
 import urllib.request
@@ -43,7 +44,11 @@ def send(method, path, api_version=None, body=None, timeout=60):
             status, raw, hdrs = resp.status, resp.read(), resp.headers
     except urllib.error.HTTPError as e:
         status, raw, hdrs = e.code, e.read(), e.headers
-    return status, json.loads(raw) if raw else None, hdrs
+    try:
+        parsed = json.loads(raw) if raw else None
+    except json.JSONDecodeError:  # e.g. a gateway or throttling error page
+        parsed = {"error": {"code": f"HTTP{status}", "message": raw.decode(errors="replace")[:2000]}}
+    return status, parsed, hdrs
 
 
 def request(method, path, api_version=None, body=None, timeout=60):
@@ -63,13 +68,22 @@ def lro(method, path, api_version, body=None, poll_seconds=5, max_wait=3600):
     poll = hdrs.get("Azure-AsyncOperation") or hdrs.get("Location")
     if status not in (201, 202) or not poll:
         return status, result
-    deadline = time.monotonic() + max_wait
+    deadline, transient = time.monotonic() + max_wait, 0
     while time.monotonic() < deadline:
-        time.sleep(int(hdrs.get("Retry-After") or poll_seconds))
-        status, result, hdrs = send("GET", poll)
+        time.sleep(min(int(hdrs.get("Retry-After") or poll_seconds), 60))
+        try:
+            status, result, hdrs = send("GET", poll)
+        except OSError:  # connection reset, timeout: keep polling
+            status, result, hdrs = 0, None, {}
+        if status in (0, 429) or status >= 500:
+            transient += 1
+            if transient > 10:
+                return status, result
+            continue
         if status == 202:
             continue
-        if status == 200 and isinstance(result, dict) and result.get("status") in ("InProgress", "Accepted", "Running"):
+        if status == 200 and isinstance(result, dict) and "status" in result \
+                and result["status"] not in ("Succeeded", "Failed", "Canceled"):
             continue
         return status, result
     raise TimeoutError(f"{method} operation did not finish within {max_wait}s")
@@ -96,9 +110,12 @@ def resource_graph(query, subscriptions=None):
 
 
 def redact(text):
-    """Mask subscription and tenant IDs before printing or saving text."""
+    """Mask subscription/tenant IDs and the resource group name in resource IDs."""
     for name in ("AZURE_SUBSCRIPTION_ID", "AZURE_TENANT_ID"):
         value = os.environ.get(name)
         if value:
-            text = text.replace(value, f"<{name}>")
+            text = re.sub(re.escape(value), f"<{name}>", text, flags=re.I)
+    rg = os.environ.get("AZURE_RESOURCE_GROUP")
+    if rg:
+        text = re.sub(rf"(resourceGroups/){re.escape(rg)}\b", r"\1<AZURE_RESOURCE_GROUP>", text, flags=re.I)
     return text

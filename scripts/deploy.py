@@ -4,6 +4,8 @@
   deploy.py deploy infra/main.bicep --name bench1 -p vmName=bench1 [--what-if-only]
   deploy.py run bench1 bench/check_amx.sh [-e KEY=VALUE ...]    # RunShellScript, prints output
   deploy.py run bench1 -c 'uptime'
+  deploy.py run bench1 bench/llama_bench.sh --background llama -e QUANTS=Q4_K_M   # long jobs
+  deploy.py job bench1 llama                                     # job state + log tail
   deploy.py fetch bench1 /mnt/data/results.tar.gz results/x.tar.gz
   deploy.py status
   deploy.py teardown --run bench1 [--all]
@@ -70,11 +72,16 @@ def throwaway_ssh_key():
     return "ssh-ed25519 " + base64.b64encode(blob).decode() + " azslm-throwaway"
 
 
-def parse_value(text):
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
+def parse_value(text, param_type):
+    """Convert a -p value to the template parameter's declared type ('1900' stays a string)."""
+    t = (param_type or "string").lower()
+    if t in ("string", "securestring"):
         return text
+    if t == "int":
+        return int(text)
+    if t == "bool":
+        return text.lower() in ("true", "1", "yes")
+    return json.loads(text)  # object / array
 
 
 def deployment_path(name):
@@ -89,14 +96,19 @@ def short_id(resource_id):
 def cmd_deploy(args):
     template = json.loads(subprocess.run(["bicep", "build", args.template, "--stdout"], check=True,
                                          capture_output=True, text=True).stdout)
-    params = {k: {"value": parse_value(v)} for k, v in (p.split("=", 1) for p in args.param)}
+    declared = template.get("parameters", {})
+    params = {}
+    for k, v in (p.split("=", 1) for p in args.param):
+        if k not in declared:
+            fail(f"unknown template parameter: {k}")
+        params[k] = {"value": parse_value(v, declared[k].get("type"))}
     if "sshPublicKey" in template.get("parameters", {}) and "sshPublicKey" not in params:
         params["sshPublicKey"] = {"value": throwaway_ssh_key()}
     body = {"properties": {"mode": "Incremental", "template": template, "parameters": params}}
     path = deployment_path(args.name)
 
-    status, result = arm.request("POST", path + "/validate", API["deployments"], body=body)
-    if status not in (200, 202):
+    status, result = arm.lro("POST", path + "/validate", API["deployments"], body=body)
+    if status != 200 or (result or {}).get("error"):
         fail(f"validate failed (HTTP {status}): {json.dumps(result, indent=1)}")
     out("validate: ok")
 
@@ -111,6 +123,8 @@ def cmd_deploy(args):
         return
 
     status, result = arm.lro("PUT", path, API["deployments"], body=body, poll_seconds=10)
+    if status not in (200, 201):
+        fail(f"deployment request failed (HTTP {status}): {json.dumps(result, indent=1)}")
     status, dep = arm.request("GET", path, API["deployments"])
     state = dep["properties"]["provisioningState"]
     out(f"deployment {args.name}: {state} ({dep['properties'].get('duration', '?')})")
@@ -130,9 +144,23 @@ def vm_path(vm):
     return f"{arm.rg_path()}/providers/Microsoft.Compute/virtualMachines/{vm}"
 
 
+EXIT_MARKER = "[azslm-exit "
+
+
 def run_script(vm, script, env=(), timeout=5400):
-    """Run a shell script as root on the VM via Run Command; return (stdout, stderr), each <= 4 KiB."""
-    lines = [HEARTBEAT] + [f"export {k}={shlex.quote(v)}" for k, v in env] + script.splitlines()
+    """Run a bash script as root on the VM via Run Command.
+
+    Returns (stdout, stderr, exit_code); stdout and stderr are each limited to their last 4 KiB.
+    The script is written to a temp file and run with bash, whatever shell Run Command uses.
+    """
+    lines = [HEARTBEAT] + [f"export {k}={shlex.quote(v)}" for k, v in env] + [
+        'f=$(mktemp /tmp/azslm-XXXXXX.sh)',
+        "cat > \"$f\" <<'AZSLM_SCRIPT_EOF'",
+        *script.splitlines(),
+        "AZSLM_SCRIPT_EOF",
+        'bash "$f"; rc=$?; rm -f "$f"',
+        f'echo "{EXIT_MARKER}$rc]"; exit $rc',
+    ]
     body = {"commandId": "RunShellScript", "script": lines}
     status, result = arm.lro("POST", vm_path(vm) + "/runCommand", API["Microsoft.Compute/virtualMachines"],
                              body=body, poll_seconds=5, max_wait=timeout)
@@ -142,26 +170,67 @@ def run_script(vm, script, env=(), timeout=5400):
     message = value[0]["message"] if value else ""
     stdout, _, stderr = message.partition("[stderr]")
     stdout = stdout.split("[stdout]", 1)[-1].strip("\n")
-    return stdout, stderr.strip("\n")
+    body_text, marker, rest = stdout.rpartition(EXIT_MARKER)
+    code = int(rest.split("]", 1)[0]) if marker and rest.split("]", 1)[0].isdigit() else -1
+    return (body_text.rstrip("\n") if marker else stdout), stderr.strip("\n"), code
+
+
+JOBS = "/mnt/data/jobs"
+
+
+def background_wrapper(name, script, env):
+    """Script that stores `script` on the VM and starts it as a transient systemd unit, so it can
+    outlive Run Command's 90-minute limit. Output goes to JOBS/<name>.log, exit code to <name>.exit."""
+    setenv = " ".join(shlex.quote(f"--setenv={k}={v}") for k, v in env)
+    return f"""set -e
+mkdir -p {JOBS}
+cat > {JOBS}/{name}.sh <<'AZSLM_JOB_EOF'
+{script}
+AZSLM_JOB_EOF
+rm -f {JOBS}/{name}.exit
+systemctl reset-failed azslm-job-{name} 2>/dev/null || true
+systemd-run --unit=azslm-job-{name} --collect {setenv} \\
+  -p StandardOutput=append:{JOBS}/{name}.log -p StandardError=append:{JOBS}/{name}.log \\
+  /bin/bash -c 'bash {JOBS}/{name}.sh; echo $? > {JOBS}/{name}.exit'
+echo "started azslm-job-{name}"
+"""
 
 
 def cmd_run(args):
     script = args.command if args.command else pathlib.Path(args.script).read_text()
     env = [e.split("=", 1) for e in args.env]
-    stdout, stderr = run_script(args.vm, script, env)
+    if args.background:
+        script, env = background_wrapper(args.background, script, env), []
+    stdout, stderr, code = run_script(args.vm, script, env)
     out(stdout)
     if stderr:
         print(arm.redact(stderr), file=sys.stderr)
+    if code != 0:
+        raise SystemExit(f"script exited with {code}")
+
+
+def cmd_job(args):
+    """Status of a background job started with `run --background NAME`."""
+    n = args.name
+    # State goes last: Run Command keeps only the last 4 KiB of output.
+    stdout, _, _ = run_script(args.vm, f"""tail -n {args.lines} {JOBS}/{n}.log 2>/dev/null | cut -c1-400
+if [ -f {JOBS}/{n}.exit ]; then echo "state: finished, exit $(cat {JOBS}/{n}.exit)"
+elif systemctl is-active -q azslm-job-{n}; then echo "state: running since $(systemctl show -p ActiveEnterTimestamp --value azslm-job-{n})"
+else echo "state: not running (no exit file)"; fi""")
+    out(stdout)
 
 
 def cmd_fetch(args):
     """Copy a (small) file off the VM in base64 chunks that fit Run Command's 4 KiB output limit."""
     q = shlex.quote(args.remote)
-    size = int(run_script(args.vm, f"stat -c %s {q}")[0].strip().splitlines()[-1])
+    stdout, _, code = run_script(args.vm, f"stat -c %s {q}")
+    if code != 0:
+        fail(f"cannot stat {args.remote} on {args.vm}")
+    size = int(stdout.strip().splitlines()[-1])
     chunk = (RUN_OUTPUT_LIMIT - 200) // 4 * 3
     data = b""
     while len(data) < size:
-        stdout, _ = run_script(args.vm, f"tail -c +{len(data) + 1} {q} | head -c {chunk} | base64 -w0")
+        stdout, _, _ = run_script(args.vm, f"tail -c +{len(data) + 1} {q} | head -c {chunk} | base64 -w0")
         piece = base64.b64decode(stdout.strip().splitlines()[-1])
         if not piece:
             fail(f"fetch stalled at {len(data)}/{size} bytes")
@@ -220,7 +289,13 @@ def main():
     r.add_argument("script", nargs="?")
     r.add_argument("-c", "--command", help="inline script instead of a file")
     r.add_argument("-e", "--env", action="append", default=[], help="KEY=VALUE exported before the script")
+    r.add_argument("--background", metavar="NAME", help="run as a background job (see `job`)")
     r.set_defaults(fn=cmd_run)
+    j = sub.add_parser("job", help="status and log tail of a background job")
+    j.add_argument("vm")
+    j.add_argument("name")
+    j.add_argument("-n", "--lines", type=int, default=40)
+    j.set_defaults(fn=cmd_job)
     f = sub.add_parser("fetch", help="copy a small file off a VM")
     f.add_argument("vm")
     f.add_argument("remote")

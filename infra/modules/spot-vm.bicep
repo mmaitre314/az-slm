@@ -12,6 +12,13 @@ param location string
 @description('VM size. Must be Spot-capable in the region and fit the regional Spot vCPU quota.')
 param vmSize string
 
+@description('Spot needs an EA, pay-as-you-go or Sponsored subscription; Visual Studio (MSDN) subscriptions only allow Regular.')
+@allowed([
+  'Spot'
+  'Regular'
+])
+param priority string = 'Spot'
+
 param subnetId string
 
 param adminUsername string = 'azureuser'
@@ -25,13 +32,42 @@ param cloudInit string
 param osDiskSizeGB int = 64
 
 @description('Daily fallback shutdown time (HHmm, UTC). The schedule deallocates the VM.')
-param dailyShutdownTime string = '0300'
+param dailyShutdownTime string
+
+@description('Unique per deployment (default: deployment time). Keeps role assignment names fresh when a VM name is reused, since the new VM gets a new identity.')
+param deploymentStamp string = utcNow()
 
 param tags object = {}
 
-var roles = {
-  virtualMachineContributor: '9980e02c-c2be-4d73-94e8-173b1dc7cf3c'
-  networkContributor: '4d97b98b-1d4f-4787-a291-c67834d212e7'
+// Least privilege for the idle watchdog: read, deallocate and delete its own VM and the resources
+// deleted with it. Built-in roles (Virtual Machine Contributor) would also allow Run Command as root
+// and VM rewrites to any process on the VM that asks IMDS for a token.
+resource selfShutdownRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' = {
+  name: guid(resourceGroup().id, 'azslm-vm-self-shutdown')
+  properties: {
+    roleName: 'azslm VM self-shutdown (${resourceGroup().name})'
+    description: 'Lets a VM identity read, deallocate and delete its own VM and its OS disk, NIC and public IP.'
+    type: 'customRole'
+    permissions: [
+      {
+        actions: [
+          'Microsoft.Compute/virtualMachines/read'
+          'Microsoft.Compute/virtualMachines/deallocate/action'
+          'Microsoft.Compute/virtualMachines/delete'
+          'Microsoft.Compute/disks/read'
+          'Microsoft.Compute/disks/delete'
+          'Microsoft.Network/networkInterfaces/read'
+          'Microsoft.Network/networkInterfaces/delete'
+          'Microsoft.Network/publicIPAddresses/read'
+          'Microsoft.Network/publicIPAddresses/delete'
+        ]
+        notActions: []
+      }
+    ]
+    assignableScopes: [
+      resourceGroup().id
+    ]
+  }
 }
 
 resource pip 'Microsoft.Network/publicIPAddresses@2024-05-01' = {
@@ -81,11 +117,13 @@ resource vm 'Microsoft.Compute/virtualMachines@2024-07-01' = {
     type: 'SystemAssigned'
   }
   properties: {
-    priority: 'Spot'
-    evictionPolicy: 'Delete'
-    billingProfile: {
-      maxPrice: -1 // never evict on price; pay the current Spot price up to the pay-as-you-go price
-    }
+    priority: priority
+    evictionPolicy: priority == 'Spot' ? 'Delete' : null
+    billingProfile: priority == 'Spot'
+      ? {
+          maxPrice: -1 // never evict on price; pay the current Spot price up to the pay-as-you-go price
+        }
+      : null
     hardwareProfile: {
       vmSize: vmSize
     }
@@ -146,33 +184,51 @@ resource vm 'Microsoft.Compute/virtualMachines@2024-07-01' = {
   }
 }
 
-// The idle watchdog deletes/deallocates its own VM. Grant the VM identity just enough on the VM and
-// the attached NIC and public IP, which are deleted with it (deleteOption: Delete).
+resource osDisk 'Microsoft.Compute/disks@2024-03-02' existing = {
+  name: 'osdisk-${name}'
+}
+
+// The idle watchdog deletes/deallocates its own VM: grant the custom role on the VM and on the OS disk,
+// NIC and public IP, which are deleted with it (deleteOption: Delete).
 resource vmRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(vm.id, roles.virtualMachineContributor)
+  #disable-next-line use-stable-resource-identifiers
+  name: guid(vm.id, 'azslm-vm-self-shutdown', deploymentStamp)
   scope: vm
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.virtualMachineContributor)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', selfShutdownRole.name)
+    principalId: vm.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource diskRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  #disable-next-line use-stable-resource-identifiers
+  name: guid(osDisk.id, vm.id, 'azslm-vm-self-shutdown', deploymentStamp)
+  scope: osDisk
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', selfShutdownRole.name)
     principalId: vm.identity.principalId
     principalType: 'ServicePrincipal'
   }
 }
 
 resource nicRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(nic.id, vm.id, roles.virtualMachineContributor)
+  #disable-next-line use-stable-resource-identifiers
+  name: guid(nic.id, vm.id, 'azslm-vm-self-shutdown', deploymentStamp)
   scope: nic
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.virtualMachineContributor)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', selfShutdownRole.name)
     principalId: vm.identity.principalId
     principalType: 'ServicePrincipal'
   }
 }
 
 resource pipRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(pip.id, vm.id, roles.networkContributor)
+  #disable-next-line use-stable-resource-identifiers
+  name: guid(pip.id, vm.id, 'azslm-vm-self-shutdown', deploymentStamp)
   scope: pip
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.networkContributor)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', selfShutdownRole.name)
     principalId: vm.identity.principalId
     principalType: 'ServicePrincipal'
   }

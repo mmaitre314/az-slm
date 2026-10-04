@@ -9,7 +9,11 @@ This repo benchmarks Small Language Models (SLMs) on Azure VMs. It is a playgrou
   are blocked in the agent sandbox (see [Network access](#network-access)), so third-party packages
   can't be installed. Use `urllib.request` for HTTP. It honors `HTTPS_PROXY` and the proxy CA bundle
   (`SSL_CERT_FILE`) with no extra setup. Ad-hoc `curl` is fine for one-off exploration.
-- Put scripts in `scripts/` and call ARM through `scripts/arm.py`.
+- Put scripts in `scripts/` and call ARM through `scripts/arm.py`. Infrastructure is Bicep in `infra/`
+  (no Azure Verified Modules: `mcr.microsoft.com` is blocked), deployed with `scripts/deploy.py`.
+  Benchmark scripts that run on the VMs live in `bench/`.
+- The Bicep CLI is installed by the environment setup script (`/usr/local/bin/bicep`, pinned release
+  from GitHub). Run `bicep lint` and a `deploy.py ... --what-if-only` before deploying.
 
 ## Secrets and identifiers
 
@@ -64,32 +68,49 @@ ARM conventions:
   size/SKU catalog, regional compute quotas (`Microsoft.Compute/locations/{region}/usages`),
   marketplace images, and resource provider state. Expect subscription-level *writes* (new resource
   groups, provider registration, quota requests) to fail.
-- Regional vCPU quotas are small. Check `usages` before picking VM sizes and counts.
+- Regional vCPU quotas are small (20 total and 20 per VM family per region). Check `usages` before
+  picking VM sizes and counts.
+- The subscription is a Visual Studio (MSDN) offer: **Spot VMs are not available** (Azure only
+  allows Spot on EA, pay-as-you-go and Sponsored offers) and fail with a misleading
+  `SkuNotAvailable` "Capacity Restrictions" error for every size and region. Deploy with
+  `-p priority=Regular`. A spending limit caps total cost.
 - `python3 scripts/check_azure_access.py` re-validates access and prints no identifiers.
 
 ## Working with VMs
 
 - The sandbox can reach only HTTPS port 443 through the proxy, so SSH to VMs is not possible from here.
-  Drive VMs through ARM instead: `customData` / cloud-init at creation time, then
-  VM Run Command (`Microsoft.Compute/virtualMachines/runCommands`) to execute benchmarks and
-  collect their output.
-- VMs egress through Azure, not through the sandbox proxy, so they should be able to download
-  models (for example from Hugging Face) even though the sandbox cannot. This is not yet verified.
-  Subnets in new VNets created with recent `Microsoft.Network` API versions are private by default
-  (`defaultOutboundAccess: false`), so give VMs an explicit outbound method (a NAT Gateway or a
-  public IP) when they need the internet.
-- Control cost: deallocate or delete VMs when a run finishes, and tag resources with the benchmark
-  they belong to.
+  Drive VMs through ARM: cloud-init (`infra/cloud-init.yaml`) at creation, then Run Command via
+  `scripts/deploy.py`:
+  - `deploy.py deploy infra/main.bicep --name <vm> -p vmName=<vm> -p priority=Regular`: one VM per
+    deployment; use a new VM name per run (SSH key and customData can't change on an existing VM).
+  - `deploy.py run <vm> bench/x.sh [-e K=V]`: runs as root under bash; returns the script's exit code.
+    Run Command keeps only the **last 4 KiB** of output and times out after 90 minutes, so use
+    `--background <job>` for anything long and `deploy.py job <vm> <job>` to poll it.
+  - `deploy.py fetch <vm> <remote> <local>` copies small files (4 KiB per call: compress first).
+  - `deploy.py teardown --run <vm>` deletes everything tagged `azslm-run=<vm>`.
+- VMs have Internet access through their Standard public IP (no inbound rules), so they download
+  models from Hugging Face directly (~1 GB/s observed) even though the sandbox cannot.
+  `/mnt/data` is the local NVMe disk(s), striped: fast, but wiped on deallocation.
+- Auto-shutdown: an in-VM watchdog deletes (default) or deallocates the VM after `idleHours` (3)
+  without load or Run Command activity, using the VM's managed identity with a custom
+  least-privilege role. Azure's daily auto-shutdown deallocates it `fallbackHours` (12) after the
+  deployment hour as a fallback. Touch `/var/lib/azslm/watchdog-disabled` on the VM to pause the
+  watchdog. Delete VMs when a run finishes anyway.
+- llama.cpp gotcha (checked 2026-10-04 on master): the AMX matmul path returns garbage for Qwen3.5-family
+  models (Qwen3.8 included) when several sequences are decoded together (`llama-parallel`, server
+  `-np`, `llama-perplexity` default batching). Single-sequence output is correct. Check output, not
+  just tokens/s, and compare against a build with AMX compiled out (`bench/build_noamx.sh`).
 
 ## Docs
 
 - Use the Microsoft Learn MCP tools (`microsoft_docs_search`, `microsoft_docs_fetch`,
   `microsoft_code_sample_search`) or fetch `https://learn.microsoft.com/...` directly.
-- `azure.microsoft.com` (pricing pages) and `prices.azure.com` (Retail Prices API) are blocked.
+- Prices: Retail Prices API at `prices.azure.com` (no auth). `docs.vllm.ai`, `recipes.vllm.ai`,
+  `huggingface.co` and most of `github.com` are blocked from the sandbox; fetch them from a VM if needed.
 
 ## Network access
 
-Observed from the agent sandbox on 2026-10-03. Re-probe if something fails, because the sandbox
+Observed from the agent sandbox on 2026-10-03, updated 2026-10-04. Re-probe if something fails, because the sandbox
 configuration may have changed. `curl -sS "$HTTPS_PROXY/__agentproxy/status"` lists recent proxy
 denials.
 
@@ -97,14 +118,15 @@ denials.
 | -------------------------------------- | ----------------------------------------------- |
 | `management.azure.com`                 | allowed, Bearer token injected                  |
 | `learn.microsoft.com`                  | allowed                                         |
-| `github.com` / `api.github.com`        | allowed for this repo only                      |
+| `github.com` / `api.github.com`        | this repo, plus release asset downloads          |
 | `login.microsoftonline.com`            | blocked                                         |
 | `graph.microsoft.com`                  | blocked                                         |
-| `azure.microsoft.com`, `prices.azure.com` | blocked                                      |
+| `azure.microsoft.com`, `prices.azure.com` | allowed                                      |
 | `aka.ms`                               | blocked                                         |
 | `raw.githubusercontent.com`            | blocked                                         |
 | `huggingface.co`, `cdn-lfs.huggingface.co` | blocked                                     |
 | `ollama.com`                           | blocked                                         |
+| `docs.vllm.ai`, `recipes.vllm.ai`, `hub.docker.com` | blocked                            |
 | `pypi.org`, `files.pythonhosted.org`   | blocked (`x-deny-reason: host_not_allowed`)     |
 | `registry.npmjs.org`                   | blocked (`x-deny-reason: host_not_allowed`)     |
 | `packages.microsoft.com`, `mcr.microsoft.com`, `archive.ubuntu.com`, `download.pytorch.org` | blocked |
