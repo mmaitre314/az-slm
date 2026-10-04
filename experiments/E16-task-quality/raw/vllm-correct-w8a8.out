@@ -1,0 +1,6 @@
+== Avesed/Qwen3.8-27B-INT8-W8A8 tag=w8a8 bind=0,2,4,6,8,10,12,14 13:42:10
+rc=0
+{"tag": "w8a8", "model": "/mnt/data/models/Avesed/Qwen3.8-27B-INT8-W8A8", "vllm": "0.31.0", "prompt_id": 1, "prompt": "List the three largest cities in France by population.", "text": "The three largest cities in France by population (within their city proper limits) are:\n\n1. **Paris** – Approximately 2.1 million inhabitants  \n2. **Marseille** – Approximately 870,000 inhabitants  \n3. **Lyon** – Approximately 520,0", "n_prompt_tokens": 22, "n_out_tokens": 64, "finish_reason": "length", "thinking": false, "seconds": 33.99, "load_seconds": 37.8}
+{"tag": "w8a8", "model": "/mnt/data/models/Avesed/Qwen3.8-27B-INT8-W8A8", "vllm": "0.31.0", "prompt_id": 2, "prompt": "Translate to German: The quick brown fox jumps over the lazy dog.", "text": "Der schnelle braune Fuchs springt über den faulen Hund.", "n_prompt_tokens": 26, "n_out_tokens": 15, "finish_reason": "stop", "thinking": false, "seconds": 5.51, "load_seconds": 37.8}
+{"tag": "w8a8", "model": "/mnt/data/models/Avesed/Qwen3.8-27B-INT8-W8A8", "vllm": "0.31.0", "prompt_id": 3, "prompt": "What is 17 * 23? Answer with the number only.", "text": "391", "n_prompt_tokens": 28, "n_out_tokens": 4, "finish_reason": "stop", "thinking": false, "seconds": 1.54, "load_seconds": 37.8}
+peak_rss_gb (main process) 1.7 container_peak_gb 90.5
