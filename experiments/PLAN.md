@@ -23,7 +23,8 @@ input and output tokens per stack, quantization and VM, with the quality cost of
   using several regions.
 - **Budget**: the subscription has a monthly credit with a spending limit. Round 1 (2026-10-04
   02:00–11:15 UTC, five VMs) cost about **$50** (activity-log VM lifetimes × list price), of which
-  ~$20 was VMs idling after their runners stopped. Round 2 budget: about **$15** (three VMs, ~3 h each).
+  ~$20 was VMs idling after their runners stopped. Round 2 budget: about **$15** (three VMs, ~3 h each); actual ~**$20** (~14 VM-hours: chains
+  took longer than planned, and each VM idled ~1 h after its chain before the watchdog deallocated it).
 - **Model**: [Qwen/Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B), a dense 27B hybrid
   (48 Gated DeltaNet linear-attention layers + 16 full-attention layers, hidden 5120, vocab 248k,
   vision encoder unused). GGUF quants from `bartowski/Qwen3.8-27B-GGUF`.
@@ -35,7 +36,7 @@ Round 2 (planned 2026-10-04 ~12:45 UTC). VM names are new per deployment.
 | VM | Region | Size | Queue | $/h all-in | State |
 | --- | --- | --- | --- | ---: | --- |
 | `b2-vllm` | eastus2 | E16ds_v7 (Granite Rapids) | E17 | 1.681 | deleted 17:08 (chain done 16:56, harvested) |
-| `b2-v6` | westus2 | E16ds_v6 (Emerald Rapids) | E18 | 1.326 | running (job `chain` since 12:32, ~13:50 end) |
+| `b2-v6` | westus2 | E16ds_v6 (Emerald Rapids) | E18, E17 MTP follow-up | 1.326 | deleted 17:45 (chains done 13:46 and 15:20, deallocated idle with results kept, harvested) |
 | `b2-qual` | centralus | E16ds_v7 (Granite Rapids) | E16 | 1.615 | deleted 17:20 (chain done 15:24, deallocated idle with results kept, harvested) |
 
 Round 1 VMs, all deleted by the idle watchdog on 2026-10-04: `bench-e16v7` (eastus2, E02–E05,
@@ -60,10 +61,10 @@ E13, E12; 02:37–10:49), `bench-vllm` (westus3) and `bench-ov` (centralus), bot
 | [E12](E12-speculative-decoding/) | Speculative decoding in llama.cpp: draft model, MTP head, n-gram | bench-v6 | runner | done (partial; vLLM MTP in E17) |
 | [E13](E13-emerald-vs-granite/) | Emerald Rapids (v6) vs Granite Rapids (v7), same llama.cpp runs | bench-v6 | runner (scripted) | done |
 | E14 | SGLang CPU backend (Intel AMX kernels) | – | runner | candidate |
-| E15 | Cross-stack cost and quality summary, recommendation (after E16–E18) | – | orchestrator | planned |
+| [E15](E15-summary/) | Cross-stack cost and quality summary, recommendation | – | orchestrator | done (rounds 1–2) |
 | [E16](E16-task-quality/) | Task-level quality of vLLM BF16, W8A8, W4A16 (GSM8K, MMLU) | b2-qual | runner | done |
 | [E17](E17-vllm-scaling-mtp/) | vLLM batch scaling, W4A16, threads, MTP | b2-vllm | runner | done (MTP real-text follow-up on b2-v6) |
-| [E18](E18-vllm-emerald-rapids/) | vLLM on E16ds_v6 vs E16ds_v7 | b2-v6 | runner | running |
+| [E18](E18-vllm-emerald-rapids/) | vLLM on E16ds_v6 vs E16ds_v7 | b2-v6 | runner | done |
 
 Status values: planned, queued, running, done, blocked, candidate (only if earlier results warrant it).
 
@@ -94,4 +95,10 @@ Status values: planned, queued, running, done, blocked, candidate (only if earli
   the cheaper v6 VM (E18), and whether the community quants keep quality (E16). OVMS (E11) is
   dropped because it shares OpenVINO GenAI's serial prefill (E10). llama.cpp MTP gives 1.5× for one sequence but
   only +19% at 4 slots (E12), not enough to close a 5× gap.
+- 2026-10-04 18:00 UTC: round 2 done, all VMs deleted. **vLLM W8A8 on E16ds_v6 at 64 prompts:
+  $2.39/M blended** (E18), $3.47/M on a slower v7 instance (E17). W4A16 (4–6× slower) and 16
+  threads (−50%) are out. W8A8 = BF16 on GSM8K, −2.75 points on MMLU (E16). vLLM MTP: 96% acceptance on
+  real text, +16% at 64 sequences (E17 follow-up). The E15 recommendation is final for rounds 1–2.
+  Next: the [RESEARCH.md](RESEARCH.md) queue. The safety net worked: b2-qual and b2-v6 were
+  deallocated idle with results kept, and harvested after a restart.
 
