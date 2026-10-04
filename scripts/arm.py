@@ -6,6 +6,7 @@ carry no Authorization header. Azure context comes from environment variables (s
 
 import json
 import os
+import time
 import urllib.error
 import urllib.request
 
@@ -25,8 +26,8 @@ def rg_path():
     return f"/subscriptions/{env('AZURE_SUBSCRIPTION_ID')}/resourceGroups/{env('AZURE_RESOURCE_GROUP')}"
 
 
-def request(method, path, api_version=None, body=None, timeout=60):
-    """Send an ARM request and return (status, parsed JSON body or None).
+def send(method, path, api_version=None, body=None, timeout=60):
+    """Send an ARM request and return (status, parsed JSON body or None, response headers).
 
     `path` is an ARM path ('/subscriptions/...') or a full URL (e.g. an Azure-AsyncOperation URL,
     which already carries its api-version). HTTP error statuses are returned, not raised.
@@ -39,10 +40,39 @@ def request(method, path, api_version=None, body=None, timeout=60):
     req = urllib.request.Request(url, data=data, method=method, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            status, raw = resp.status, resp.read()
+            status, raw, hdrs = resp.status, resp.read(), resp.headers
     except urllib.error.HTTPError as e:
-        status, raw = e.code, e.read()
-    return status, json.loads(raw) if raw else None
+        status, raw, hdrs = e.code, e.read(), e.headers
+    return status, json.loads(raw) if raw else None, hdrs
+
+
+def request(method, path, api_version=None, body=None, timeout=60):
+    """Like send(), without the headers: returns (status, parsed JSON body or None)."""
+    status, body, _ = send(method, path, api_version, body, timeout)
+    return status, body
+
+
+def lro(method, path, api_version, body=None, poll_seconds=5, max_wait=3600):
+    """Send a request and wait for a long-running operation to finish.
+
+    Returns (status, body) of the final poll: for Azure-AsyncOperation that is the operation status
+    document ({"status": "Succeeded"|"Failed"|..., "error": ..., "properties": ...}); for Location
+    polling it is the final resource or result. Requests that complete synchronously return as is.
+    """
+    status, result, hdrs = send(method, path, api_version, body)
+    poll = hdrs.get("Azure-AsyncOperation") or hdrs.get("Location")
+    if status not in (201, 202) or not poll:
+        return status, result
+    deadline = time.monotonic() + max_wait
+    while time.monotonic() < deadline:
+        time.sleep(int(hdrs.get("Retry-After") or poll_seconds))
+        status, result, hdrs = send("GET", poll)
+        if status == 202:
+            continue
+        if status == 200 and isinstance(result, dict) and result.get("status") in ("InProgress", "Accepted", "Running"):
+            continue
+        return status, result
+    raise TimeoutError(f"{method} operation did not finish within {max_wait}s")
 
 
 def resource_graph(query, subscriptions=None):

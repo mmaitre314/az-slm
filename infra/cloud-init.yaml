@@ -1,0 +1,136 @@
+#cloud-config
+# Benchmark VM bootstrap. __IDLE_HOURS__ and __IDLE_ACTION__ are substituted by main.bicep.
+# Logs: /var/log/azslm-setup.log; completion marker: /var/lib/azslm/setup-done.
+package_update: true
+packages:
+  - build-essential
+  - cmake
+  - git
+  - jq
+  - mdadm
+  - numactl
+  - python3-venv
+  - python3-pip
+  - cpuid
+
+write_files:
+  - path: /usr/local/sbin/azslm-mount-data
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Mount the local NVMe disks (striped when there are several) at /mnt/data. They are wiped
+      # when the VM is deallocated or moved, so this runs on every boot. Falls back to the OS disk.
+      set -euo pipefail
+      MNT=/mnt/data
+      mkdir -p "$MNT"
+      mountpoint -q "$MNT" && exit 0
+      mdadm --assemble --scan >/dev/null 2>&1 || true
+      if blkid -L azslm-data >/dev/null 2>&1; then
+        mount -o noatime LABEL=azslm-data "$MNT"; chmod 1777 "$MNT"; exit 0
+      fi
+      devs=()
+      for d in /sys/block/nvme*n*; do
+        [ -e "$d/device/model" ] || continue
+        case "$(cat "$d/device/model")" in *"Direct Disk"*) devs+=("/dev/$(basename "$d")") ;; esac
+      done
+      if [ ${#devs[@]} -eq 0 ]; then
+        echo "no local NVMe disks found; /mnt/data stays on the OS disk"; chmod 1777 "$MNT"; exit 0
+      fi
+      dev=${devs[0]}
+      if [ ${#devs[@]} -gt 1 ]; then
+        mdadm --create /dev/md/azslm --level=0 --raid-devices=${#devs[@]} "${devs[@]}" --run --force
+        dev=/dev/md/azslm
+      fi
+      mkfs.ext4 -F -q -L azslm-data -E lazy_itable_init=1,lazy_journal_init=1,nodiscard "$dev"
+      mount -o noatime "$dev" "$MNT"
+      chmod 1777 "$MNT"
+
+  - path: /etc/systemd/system/azslm-mount-data.service
+    content: |
+      [Unit]
+      Description=Mount local NVMe disks at /mnt/data
+      After=local-fs.target
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      ExecStart=/usr/local/sbin/azslm-mount-data
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /usr/local/sbin/azslm-idle-watchdog
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Delete or deallocate this VM after IDLE_HOURS without activity, using the VM's managed
+      # identity. Activity: 15-minute load average >= 1, or /var/lib/azslm/heartbeat touched
+      # (scripts/deploy.py touches it on every Run Command). Create /var/lib/azslm/watchdog-disabled
+      # to pause it.
+      set -u
+      IDLE_HOURS=__IDLE_HOURS__
+      ACTION=__IDLE_ACTION__
+      STATE=/var/lib/azslm
+      mkdir -p "$STATE"
+      now=$(date +%s)
+      last=$(cat "$STATE/last_active" 2>/dev/null || echo "$now")
+      if [ -f "$STATE/heartbeat" ]; then
+        hb=$(stat -c %Y "$STATE/heartbeat")
+        [ "$hb" -gt "$last" ] && last=$hb
+      fi
+      load15=$(cut -d' ' -f3 /proc/loadavg)
+      if awk -v l="$load15" 'BEGIN { exit !(l >= 1.0) }'; then last=$now; fi
+      echo "$last" > "$STATE/last_active"
+      idle=$(( now - last ))
+      limit=$(( IDLE_HOURS * 3600 ))
+      logger -t azslm-watchdog "idle ${idle}s of ${limit}s, load15 ${load15}"
+      [ "$idle" -lt "$limit" ] && exit 0
+      [ -f "$STATE/watchdog-disabled" ] && { logger -t azslm-watchdog "disabled; not acting"; exit 0; }
+      IMDS=http://169.254.169.254/metadata
+      token=$(curl -sf -H Metadata:true "$IMDS/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/" | jq -r .access_token)
+      id=$(curl -sf -H Metadata:true "$IMDS/instance/compute/resourceId?api-version=2021-02-01&format=text")
+      case "$ACTION" in
+        delete) code=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "Authorization: Bearer $token" "https://management.azure.com${id}?api-version=2024-07-01") ;;
+        *) code=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H "Authorization: Bearer $token" -H "Content-Length: 0" "https://management.azure.com${id}/deallocate?api-version=2024-07-01") ;;
+      esac
+      logger -t azslm-watchdog "idle ${idle}s: requested ${ACTION}, HTTP ${code}"
+
+  - path: /etc/systemd/system/azslm-idle-watchdog.service
+    content: |
+      [Unit]
+      Description=Delete or deallocate this VM when idle
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/sbin/azslm-idle-watchdog
+
+  - path: /etc/systemd/system/azslm-idle-watchdog.timer
+    content: |
+      [Unit]
+      Description=Run the idle watchdog every 5 minutes
+      [Timer]
+      OnBootSec=10min
+      OnUnitActiveSec=5min
+      [Install]
+      WantedBy=timers.target
+
+  - path: /usr/local/sbin/azslm-setup
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # One-time setup: Python venv with the Hugging Face CLI, and llama.cpp built natively
+      # (GGML_NATIVE=ON compiles the AMX kernels on AMX hosts).
+      set -euxo pipefail
+      mkdir -p /var/lib/azslm /mnt/data/models /mnt/data/results
+      python3 -m venv /opt/azslm/venv
+      /opt/azslm/venv/bin/pip install -q -U pip 'huggingface_hub[hf_xet]'
+      git clone --depth 1 https://github.com/ggml-org/llama.cpp.git /opt/llama.cpp
+      cd /opt/llama.cpp
+      git log -1 --format='%H %cI' > /var/lib/azslm/llama.cpp.version
+      cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=ON
+      cmake --build build -j"$(nproc)"
+      ln -sf /opt/llama.cpp/build/bin/* /usr/local/bin/
+
+runcmd:
+  - [mkdir, -p, /var/lib/azslm]
+  - [systemctl, daemon-reload]
+  - [systemctl, enable, --now, azslm-mount-data.service]
+  - [systemctl, enable, --now, azslm-idle-watchdog.timer]
+  - [bash, -c, '/usr/local/sbin/azslm-setup > /var/log/azslm-setup.log 2>&1; echo $? > /var/lib/azslm/setup-done']

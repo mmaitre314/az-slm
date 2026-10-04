@@ -1,0 +1,1626 @@
+{
+ "generated": "2026-10-03",
+ "method": "ARM VM families visible to the subscription, classified from Microsoft Learn series pages by one agent per chunk and re-checked by an adversarial verifier. yes = every documented processor has AMX; partial = mixed hardware, AMX only on some hosts; AMD/GPU families were excluded up front.",
+ "families": {
+  "standardAv2Family": {
+   "series": "Av2",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)",
+    "Intel Xeon 8171M (Skylake)",
+    "Intel Xeon E5-2673 v4 (Broadwell)",
+    "Intel Xeon E5-2673 v3 (Haswell)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/av2-series"
+  },
+  "standardBSFamily": {
+   "series": "B-series v1 (Bv1)",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)",
+    "Intel Xeon 8171M (Skylake)",
+    "Intel Xeon E5-2673 v4 (Broadwell)",
+    "Intel Xeon E5-2673 v3 (Haswell)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/bv1-series"
+  },
+  "standardBsv2Family": {
+   "series": "Bsv2",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/bsv2-series"
+  },
+  "standardDCEDV6Family": {
+   "series": "DCedsv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dcedsv6-series"
+  },
+  "standardDCEV6Family": {
+   "series": "DCesv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dcesv6-series"
+  },
+  "standardDCSv3Family": {
+   "series": "DCsv3",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon 3rd Gen Scalable (Ice Lake)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dcsv3-series"
+  },
+  "standardDDCSv3Family": {
+   "series": "DCdsv3",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon 3rd Gen Scalable (Ice Lake)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dcdsv3-series"
+  },
+  "standardDDSv4Family": {
+   "series": "Ddsv4",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/ddsv4-series"
+  },
+  "standardDDSv5Family": {
+   "series": "Ddsv5",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/ddsv5-series"
+  },
+  "StandardDdsv6Family": {
+   "series": "Ddsv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (5th Gen Xeon Scalable, Emerald Rapids)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/ddsv6-series"
+  },
+  "StandardDdsv7Family": {
+   "series": "Ddsv7",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 6 6973PC (Xeon 6 P-core, Granite Rapids)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/ddsv7-series"
+  },
+  "standardDDv4Family": {
+   "series": "Ddv4",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/ddv4-series"
+  },
+  "standardDDv5Family": {
+   "series": "Ddv5",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/ddv5-series"
+  },
+  "standardDFamily": {
+   "series": "D-series (v1, Standard_D1-D14)",
+   "amx": "no",
+   "processors": [],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/accelerator-technologies/intel-amx-overview"
+  },
+  "standardDLDSv5Family": {
+   "series": "Dldsv5",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen) - host-spec table only",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dldsv5-series"
+  },
+  "StandardDldsv6Family": {
+   "series": "Dldsv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (5th Gen Xeon Scalable, Emerald Rapids)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dldsv6-series"
+  },
+  "StandardDldsv7Family": {
+   "series": "Dldsv7",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 6 6973PC (Xeon 6 P-core, Granite Rapids)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dldsv7-series"
+  },
+  "standardDLSv5Family": {
+   "series": "Dlsv5",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dlsv5-series"
+  },
+  "StandardDlsv6Family": {
+   "series": "Dlsv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (5th Gen Xeon Scalable, Emerald Rapids)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dlsv6-series"
+  },
+  "StandardDlsv7Family": {
+   "series": "Dlsv7",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 6 6973PC (Xeon 6 P-core, Granite Rapids)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dlsv7-series"
+  },
+  "StandardDndv6Family": {
+   "series": "Dndsv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (5th Gen Xeon Scalable, Emerald Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/dndsv6-series"
+  },
+  "StandardDnldv6Family": {
+   "series": "Dnldsv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (5th Gen Xeon Scalable, Emerald Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/dnldsv6-series"
+  },
+  "StandardDnlv6Family": {
+   "series": "Dnlsv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (5th Gen Xeon Scalable, Emerald Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/dnlsv6-series"
+  },
+  "StandardDnv6Family": {
+   "series": "Dnsv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (5th Gen Xeon Scalable, Emerald Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/dnsv6-series"
+  },
+  "standardDSFamily": {
+   "series": "DS-series (v1, Standard_DS1-DS14)",
+   "amx": "no",
+   "processors": [],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/accelerator-technologies/intel-amx-overview"
+  },
+  "standardDSv2Family": {
+   "series": "DSv2",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)",
+    "Intel Xeon 8171M (Skylake)",
+    "Intel Xeon E5-2673 v4 (Broadwell)",
+    "Intel Xeon E5-2673 v3 (Haswell)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv2-series"
+  },
+  "standardDSv2PromoFamily": {
+   "series": "DSv2 Promo (DS*_v2_Promo)",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)",
+    "Intel Xeon 8171M (Skylake)",
+    "Intel Xeon E5-2673 v4 (Broadwell)",
+    "Intel Xeon E5-2673 v3 (Haswell)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv2-series"
+  },
+  "standardDSv3Family": {
+   "series": "Dsv3",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)",
+    "Intel Xeon 8171M (Skylake)",
+    "Intel Xeon E5-2673 v4 (Broadwell)",
+    "Intel Xeon E5-2673 v3 (Haswell)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv3-series"
+  },
+  "standardDSv4Family": {
+   "series": "Dsv4",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv4-series"
+  },
+  "standardDSv5Family": {
+   "series": "Dsv5",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv5-series"
+  },
+  "StandardDsv6Family": {
+   "series": "Dsv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (5th Gen Xeon Scalable, Emerald Rapids)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv6-series"
+  },
+  "StandardDsv7Family": {
+   "series": "Dsv7",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 6 6973PC (Xeon 6 P-core, Granite Rapids)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dsv7-series"
+  },
+  "standardDv2Family": {
+   "series": "Dv2",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)",
+    "Intel Xeon 8171M (Skylake)",
+    "Intel Xeon E5-2673 v4 (Broadwell)",
+    "Intel Xeon E5-2673 v3 (Haswell)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dv2-series"
+  },
+  "standardDv2PromoFamily": {
+   "series": "Dv2 Promo (D*_v2_Promo)",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)",
+    "Intel Xeon 8171M (Skylake)",
+    "Intel Xeon E5-2673 v4 (Broadwell)",
+    "Intel Xeon E5-2673 v3 (Haswell)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dv2-series"
+  },
+  "standardDv3Family": {
+   "series": "Dv3",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)",
+    "Intel Xeon 8171M (Skylake)",
+    "Intel Xeon E5-2673 v4 (Broadwell)",
+    "Intel Xeon E5-2673 v3 (Haswell)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dv3-series"
+  },
+  "standardDv4Family": {
+   "series": "Dv4",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dv4-series"
+  },
+  "standardDv5Family": {
+   "series": "Dv5",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen) - host-spec table only"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dv5-series"
+  },
+  "standardEBDSv5Family": {
+   "series": "Ebdsv5",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ebdsv5-ebsv5-series"
+  },
+  "standardEBSv5Family": {
+   "series": "Ebsv5",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen) - per Ebsv5 sub-section"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ebdsv5-ebsv5-series"
+  },
+  "StandardECEDV6Family": {
+   "series": "ECedsv6",
+   "amx": "yes",
+   "processors": [
+    "Intel 5th Gen Xeon Scalable (Emerald Rapids). The ECedsv6 page gives no model number; DCesv6 and DCedsv6, which run on the same confidential TDX platform, list Xeon Platinum 8573C."
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ecedsv6-series"
+  },
+  "StandardECEV6Family": {
+   "series": "ECesv6",
+   "amx": "yes",
+   "processors": [
+    "Intel 5th Gen Xeon Scalable (Emerald Rapids). This page gives no model number; the sibling DCesv6 lists Xeon Platinum 8573C."
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ecesv6-series"
+  },
+  "standardEDSv4Family": {
+   "series": "Edsv4",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edsv4-series"
+  },
+  "standardEDSv5Family": {
+   "series": "Edsv5",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edsv5-series"
+  },
+  "StandardEdsv6Family": {
+   "series": "Edsv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (5th Gen Xeon Scalable, Emerald Rapids)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edsv6-series"
+  },
+  "StandardEdsv7Family": {
+   "series": "Edsv7",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 6 6973PC / 6973P-C (Xeon 6 P-core, Granite Rapids)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edsv7-series"
+  },
+  "standardEDv4Family": {
+   "series": "Edv4",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edv4-series"
+  },
+  "standardEDv5Family": {
+   "series": "Edv5",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edv5-series"
+  },
+  "standardEIBDSv5Family": {
+   "series": "Ebdsv5 isolated (Standard_E112ibds_v5)",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ebdsv5-ebsv5-series"
+  },
+  "standardEIBSv5Family": {
+   "series": "Ebsv5 isolated (Standard_E112ibs_v5)",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ebdsv5-ebsv5-series"
+  },
+  "standardEIDSv5Family": {
+   "series": "Edsv5 isolated (Standard_E104ids_v5)",
+   "amx": "unknown",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen) - series-level list",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen) - series-level list"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edsv5-series"
+  },
+  "standardEIDv5Family": {
+   "series": "Edv5 isolated (Standard_E104id_v5)",
+   "amx": "unknown",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen) - series-level list",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen) - series-level list"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/edv5-series"
+  },
+  "standardEISv5Family": {
+   "series": "Esv5 isolated (Standard_E104is_v5)",
+   "amx": "unknown",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen) - series-level list",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen) - series-level list",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen) - series-level list"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/esv5-series"
+  },
+  "standardEIv5Family": {
+   "series": "Ev5 isolated (Standard_E104i_v5)",
+   "amx": "unknown",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen) - series-level list",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen) - series-level list",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen) - series-level list"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ev5-series"
+  },
+  "StandardEndv6Family": {
+   "series": "Endsv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (5th Gen Xeon Scalable, Emerald Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/endsv6-series"
+  },
+  "StandardEnv6Family": {
+   "series": "Ensv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (5th Gen Xeon Scalable, Emerald Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ensv6-series"
+  },
+  "standardESv3Family": {
+   "series": "Esv3",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)",
+    "Intel Xeon 8171M (Skylake)",
+    "Intel Xeon E5-2673 v4 (Broadwell)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ev3-esv3-series"
+  },
+  "standardESv4Family": {
+   "series": "Esv4",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/esv4-series"
+  },
+  "standardESv5Family": {
+   "series": "Esv5",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/esv5-series"
+  },
+  "StandardEsv6Family": {
+   "series": "Esv6",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (5th Gen Xeon Scalable, Emerald Rapids)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/esv6-series"
+  },
+  "StandardEsv7Family": {
+   "series": "Esv7",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 6 6973PC / 6973P-C (Xeon 6 P-core, Granite Rapids)"
+   ],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/esv7-series"
+  },
+  "standardEv3Family": {
+   "series": "Ev3",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)",
+    "Intel Xeon 8171M (Skylake)",
+    "Intel Xeon E5-2673 v4 (Broadwell)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ev3-esv3-series"
+  },
+  "standardEv4Family": {
+   "series": "Ev4",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ev4-series"
+  },
+  "standardEv5Family": {
+   "series": "Ev5",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/ev5-series"
+  },
+  "standardFFamily": {
+   "series": "F-series (v1, Standard_F1-F16)",
+   "amx": "unknown",
+   "processors": [],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/accelerator-technologies/intel-amx-overview"
+  },
+  "standardFSFamily": {
+   "series": "Fs-series (v1, Standard_F1s-F16s)",
+   "amx": "unknown",
+   "processors": [],
+   "docs_mention_amx": true,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/accelerator-technologies/intel-amx-overview"
+  },
+  "standardFSv2Family": {
+   "series": "Fsv2",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)",
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen)",
+    "Intel Xeon Platinum 8168 (Skylake)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/compute-optimized/fsv2-series"
+  },
+  "StandardFXmdsv2Family": {
+   "series": "FXmdsv2",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/compute-optimized/fxmdsv2-series"
+  },
+  "standardFXMDVSFamily": {
+   "series": "FX (FXmds, v1)",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Gold 6246R (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/compute-optimized/fx-series"
+  },
+  "StandardFXmsv2Family": {
+   "series": "FXmsv2",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/compute-optimized/fxmsv2-series"
+  },
+  "standardGFamily": {
+   "series": "G-series",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon E5 v3 family (Haswell)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/previous-versions/azure/cloud-services/cloud-services-sizes-specs"
+  },
+  "standardGSFamily": {
+   "series": "GS-series",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon E5 v3 family (Haswell) - inferred from the G-series statement"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/previous-versions/azure/cloud-services/cloud-services-sizes-specs"
+  },
+  "standardHCSFamily": {
+   "series": "HC",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8168 (Skylake)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/high-performance-compute/hc-series"
+  },
+  "standardLSFamily": {
+   "series": "Ls (Lsv1)",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon E5-2698B v3 (Haswell), per the Learn compute benchmark scores page"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/windows/compute-benchmark-scores#storage-optimized"
+  },
+  "standardLSv2Family": {
+   "series": "Lsv2",
+   "amx": "no",
+   "processors": [
+    "AMD EPYC 7551 (Naples)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/storage-optimized/lsv2-series"
+  },
+  "standardLSv3Family": {
+   "series": "Lsv3",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/storage-optimized/lsv3-series"
+  },
+  "standardLsv4Family": {
+   "series": "Lsv4",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/storage-optimized/lsv4-series"
+  },
+  "StandardMBDSMediumMemoryv3Family": {
+   "series": "Mbdsv3",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 4th Gen Scalable (Sapphire Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/mbdsv3-series"
+  },
+  "StandardMBSMediumMemoryv3Family": {
+   "series": "Mbsv3",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 4th Gen Scalable (Sapphire Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/mbsv3-series"
+  },
+  "standardMDSHighMemoryv3Family": {
+   "series": "Mdsv3 High Memory",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 4th Gen Scalable (Sapphire Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/mdsv3-hm-series"
+  },
+  "standardMDSMediumMemoryv2Family": {
+   "series": "Mdsv2 Medium Memory",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8280 (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/mdsv2-mm-series"
+  },
+  "standardMDSMediumMemoryv3Family": {
+   "series": "Mdsv3 Medium Memory",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 4th Gen Scalable (Sapphire Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/mdsv3-mm-series"
+  },
+  "standardMIDSHighMemoryv3Family": {
+   "series": "Mdsv3 High Memory (isolated size M832ids_16_v3)",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 4th Gen Scalable (Sapphire Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/mdsv3-hm-series"
+  },
+  "standardMIDSMediumMemoryv2Family": {
+   "series": "Mdsv2 Medium Memory (isolated sizes M192ids_v2 / M192idms_v2)",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8280 (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/mdsv2-mm-series"
+  },
+  "standardMISHighMemoryv3Family": {
+   "series": "Msv3 High Memory (isolated size M832is_16_v3)",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 4th Gen Scalable (Sapphire Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/msv3-hm-series"
+  },
+  "standardMISMediumMemoryv2Family": {
+   "series": "Msv2 Medium Memory (isolated sizes M192is_v2 / M192ims_v2)",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8280 (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/msv2-mm-series"
+  },
+  "standardMSFamily": {
+   "series": "M (M-series v1)",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon E7-8890 v3 (Haswell)",
+    "Intel Xeon Platinum 8280M (Cascade Lake)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/m-series"
+  },
+  "standardMSHighMemoryv3Family": {
+   "series": "Msv3 High Memory",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 4th Gen Scalable (Sapphire Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/msv3-hm-series"
+  },
+  "standardMSMediumMemoryv2Family": {
+   "series": "Msv2 Medium Memory",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8280 (Cascade Lake, 2nd Gen)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/msv2-mm-series"
+  },
+  "standardMSMediumMemoryv3Family": {
+   "series": "Msv3 Medium Memory",
+   "amx": "yes",
+   "processors": [
+    "Intel Xeon 4th Gen Scalable (Sapphire Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/msv3-mm-series"
+  },
+  "standardMSv2Family": {
+   "series": "Mv2 / Msv2 High Memory (page titled 'Msv2 High Memory sizes series')",
+   "amx": "partial",
+   "processors": [
+    "Intel Xeon Platinum 8180M (Skylake)",
+    "Intel Xeon 4th Gen Scalable (Sapphire Rapids)"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/mv2-series"
+  },
+  "standardPBSFamily": {
+   "series": "PBs (Standard_PB6s), the legacy Azure ML FPGA-enabled VM; no VM sizes series page exists",
+   "amx": "unknown",
+   "processors": [],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/python/api/azureml-core/azureml.core.compute.aks.akscompute?view=azure-ml-py"
+  },
+  "standardXEIDSv4Family": {
+   "series": "Edsv4 (isolated size Standard_E80ids_v4)",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen): the only CPU any Learn page gives for Standard_E80ids_v4 (compute benchmark scores, 'Edsv4 Isolated Extended')",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen): listed for the Edsv4 series as a whole only",
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen): listed for the Edsv4 series as a whole; no doc ties it to the isolated E80ids_v4 size"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/windows/compute-benchmark-scores#memory-optimized"
+  },
+  "standardXEISv4Family": {
+   "series": "Esv4 (isolated size Standard_E80is_v4)",
+   "amx": "no",
+   "processors": [
+    "Intel Xeon Platinum 8272CL (Cascade Lake, 2nd Gen): the only CPU any Learn page gives for Standard_E80is_v4 (compute benchmark scores, 'Esv4 Isolated Extended')",
+    "Intel Xeon Platinum 8370C (Ice Lake, 3rd Gen): listed for the Esv4 series as a whole only",
+    "Intel Xeon Platinum 8473C (Sapphire Rapids, 4th Gen): listed for the Esv4 series as a whole; no doc ties it to E80is_v4",
+    "Intel Xeon Platinum 8573C (Emerald Rapids, 5th Gen): listed for the Esv4 series as a whole; no doc ties it to E80is_v4"
+   ],
+   "docs_mention_amx": false,
+   "source": "https://learn.microsoft.com/azure/virtual-machines/windows/compute-benchmark-scores#memory-optimized"
+  },
+  "StandardDadsv7Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardDaldsv7Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardDalsv7Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardDasv7Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardEadsv7Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardEasv7Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardFadsv7Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardFaldsv7Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardFalsv6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardFalsv7Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardFamdsv7Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardFamsv6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardFamsv7Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardFasv6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardFasv7Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardBasv2Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDADSv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDASv4Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDASv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDAv4Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDCACCV5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDCADCCV5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDCADSv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDCASv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDCadsv6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDCasv6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDadv6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDaldv6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDalv6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardDav6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardEADSv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardEASv4Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardEASv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardEAv4Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardECACCV5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardECADCCV5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardECADSv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardECASv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardECIADSv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardECIASv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardECadsv6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardECasv6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardEIADSv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardEIASv4Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardEIASv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardEadv6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardEav6Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardHBrsv2Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardHBv3Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardHBv4Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardHBv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardHXFamily": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardLASv3Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardLaosv4Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardLaosv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardLasv4Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardLasv5Family": {
+   "series": null,
+   "amx": "no",
+   "processors": [
+    "AMD EPYC"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "Standard NCASv3_T4 Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "Standard NDASv4_A100 Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardNCADSA100v4Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardNCADSA10v4Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardNCCads2023Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardNCadsH100v5Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardNCdsRTXPRO6000BSEv6XLFamily": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardNGADSV620v1Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardNVADSA10v5Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "StandardNVadsV710v5Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standard NDAMSv4_A100Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardNCSv3Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardNDISRH200V5Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardNDISv5MI300XFamily": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardNDSH100v5Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardNDSv2Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardNPSFamily": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardNVSv2Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardNVSv3Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  },
+  "standardNVSv4Family": {
+   "series": null,
+   "amx": "excluded",
+   "processors": [
+    "GPU VM, out of scope"
+   ],
+   "docs_mention_amx": false,
+   "source": null
+  }
+ }
+}
