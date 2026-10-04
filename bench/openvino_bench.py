@@ -35,6 +35,7 @@ ap.add_argument("--prefix-caching", action="store_true")
 ap.add_argument("--no-split-fuse", action="store_true")
 ap.add_argument("--pipe", default="cb")
 ap.add_argument("--note", default="")
+ap.add_argument("--warmup", default="full", help="full | quick | none")
 args = ap.parse_args()
 
 import openvino_genai as g  # noqa: E402
@@ -108,19 +109,22 @@ def run_once(n, in_len, out_len, shared_prefix=0):
     res = pipe.generate(inputs, cfgs)
     wall = time.perf_counter() - t0
     out_tokens = 0
+    in_tokens_seen = 0
     ttfts, tpots = [], []
     for r in res:
-        ids = r.m_generation_ids[0]
-        out_tokens += len(ids)
         pm = getattr(r, "perf_metrics", None)
         if pm is not None:
             try:
+                out_tokens += pm.get_num_generated_tokens()
+                in_tokens_seen += pm.get_num_input_tokens()
                 ttfts.append(pm.get_ttft().mean / 1000.0)  # ms -> s
                 tpots.append(pm.get_tpot().mean / 1000.0)
             except Exception:  # noqa: BLE001
                 pass
+    if not out_tokens:
+        out_tokens = n * out_len  # fallback: ignore_eos + min_new_tokens guarantee it
     row = {"n": n, "input_len": in_len, "output_len": out_len, "shared_prefix": shared_prefix,
-           "wall_s": round(wall, 3), "in_tokens": n * in_len, "out_tokens": out_tokens,
+           "wall_s": round(wall, 3), "in_tokens": n * in_len, "in_tokens_seen": in_tokens_seen, "out_tokens": out_tokens,
            "total_tok_s": round((n * in_len + out_tokens) / wall, 2),
            "in_tok_s": round(n * in_len / wall, 2), "out_tok_s": round(out_tokens / wall, 2),
            "ttft_mean_s": round(mean(ttfts), 3) if ttfts else None,
@@ -151,8 +155,11 @@ def emit(row):
 
 # warm-up: loads the weights into page cache, creates kernels for typical shapes
 t = time.time()
-pipe.generate([tensor(make_ids(512)) for _ in range(4)], [cfg_for(8)] * 4)
-pipe.generate([tensor(make_ids(32))], [cfg_for(16)])
+if args.warmup == "full":
+    pipe.generate([tensor(make_ids(512)) for _ in range(4)], [cfg_for(8)] * 4)
+    pipe.generate([tensor(make_ids(32))], [cfg_for(16)])
+elif args.warmup == "quick":
+    pipe.generate([tensor(make_ids(128))], [cfg_for(4)])
 print(f"warmup {time.time() - t:.1f}s rss {C.read_proc_status('VmRSS')} GB", flush=True)
 
 for wl in args.workloads.split(","):

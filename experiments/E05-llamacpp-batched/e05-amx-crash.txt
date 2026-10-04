@@ -1,0 +1,63 @@
+### E05 valid: native build without AMX
+== Q4_0 build-native-noamx npl=1,4,8,16,32 ctx=8448 03:26:31
+  npl=1: prefill 17.7 t/s, decode 2.4 t/s, total 4.2 t/s
+  npl=4: prefill 18 t/s, decode 9.1 t/s, total 12.1 t/s
+  npl=8: prefill 18.1 t/s, decode 9.5 t/s, total 12.4 t/s
+  npl=16: prefill 18.1 t/s, decode 12.7 t/s, total 14.9 t/s
+  npl=32: prefill 18.1 t/s, decode 13 t/s, total 15.1 t/s
+== Q4_K_M build-native-noamx npl=1,4,8,16,32 ctx=8448 03:45:21
+  npl=1: prefill 20.7 t/s, decode 3.5 t/s, total 6 t/s
+  npl=4: prefill 21.7 t/s, decode 9 t/s, total 12.7 t/s
+  npl=8: prefill 21.7 t/s, decode 9.1 t/s, total 12.9 t/s
+  npl=16: prefill 21.5 t/s, decode 13.4 t/s, total 16.5 t/s
+  npl=32: prefill 21.5 t/s, decode 14.2 t/s, total 17.1 t/s
+== Q8_0 build-native-noamx npl=1,4,8,16,32 ctx=8448 04:02:24
+  npl=1: prefill 14.4 t/s, decode 1.9 t/s, total 3.4 t/s
+  npl=4: prefill 14.8 t/s, decode 8.1 t/s, total 10.4 t/s
+  npl=8: prefill 14.9 t/s, decode 9.9 t/s, total 11.9 t/s
+  npl=16: prefill 14.9 t/s, decode 10.7 t/s, total 12.4 t/s
+  npl=32: prefill 14.9 t/s, decode 11 t/s, total 12.6 t/s
+done 04:24:28
+### E05 reference: AMX build (output known corrupt for >1 sequence, E04): speed only
+== Q4_0 build npl=1,4,8,16,32 ctx=8448 04:24:28
+  npl=1: prefill 33.3 t/s, decode 5 t/s, total 8.8 t/s
+  npl=4: prefill 35.2 t/s, decode 9.2 t/s, total 14.6 t/s
+  npl=8: prefill 35.3 t/s, decode 13.3 t/s, total 19.3 t/s
+/opt/azslm/bench/llama_batched.sh: line 20: 52090 Segmentation fault      (core dumped) /opt/llama.cpp/$b/bin/llama-batched-bench -m "$m" -c "$ctx" -b 2048 -ub 512 -npp "$PP" -ntg "$TG" -npl "$NPL" -t "$THREADS
+  FAILED (see /mnt/data/results/llama-batched-Q4_0-build.log)
+0.00.373.219 W model has unused tensor blk.64.nextn.eh_proj.weight (size = 29491200 bytes) -- ignoring
+0.00.373.221 W model has unused tensor blk.64.nextn.enorm.weight (size = 20480 bytes) -- ignoring
+0.00.373.224 W model has unused tensor blk.64.nextn.hnorm.weight (size = 20480 bytes) -- ignoring
+0.00.373.231 W model has unused tensor blk.64.nextn.shared_head_norm.weight (size = 20480 bytes) -- ignoring
+0.01.160.876 W llama_context: n_ctx is not divisible by n_seq_max - rounding down to 16384
+== Q8_0 build npl=1,4,8,16,32 ctx=8448 04:35:47
+  npl=1: prefill 33.7 t/s, decode 3 t/s, total 5.6 t/s
+  npl=4: prefill 38.5 t/s, decode 7.9 t/s, total 13.1 t/s
+  npl=8: prefill 38.8 t/s, decode 12.5 t/s, total 18.9 t/s
+  npl=16: prefill 38.5 t/s, decode 15.2 t/s, total 21.8 t/s
+/opt/azslm/bench/llama_batched.sh: line 20: 52509 Segmentation fault      (core dumped) /opt/llama.cpp/$b/bin/llama-batched-bench -m "$m" -c "$ctx" -b 2048 -ub 512 -npp "$PP" -ntg "$TG" -npl "$NPL" -t "$THREADS
+  FAILED (see /mnt/data/results/llama-batched-Q8_0-build.log)
+0.00.356.935 W model has unused tensor blk.64.nextn.eh_proj.weight (size = 55705600 bytes) -- ignoring
+0.00.356.938 W model has unused tensor blk.64.nextn.enorm.weight (size = 20480 bytes) -- ignoring
+0.00.356.940 W model has unused tensor blk.64.nextn.hnorm.weight (size = 20480 bytes) -- ignoring
+0.00.356.946 W model has unused tensor blk.64.nextn.shared_head_norm.weight (size = 20480 bytes) -- ignoring
+0.10.651.686 W llama_context: n_ctx is not divisible by n_seq_max - rounding down to 16384
+done 05:01:56
+## dmesg
+[ 8415.651611] llama-batched-b[52103]: segfault at 7c8187207040 ip 00007c8558c74d62 sp 00007c7dec9016c0 error 4 in libggml-cpu.so.0.25.3[74d62,7c8558c14000+15c000] likely on CPU 4 (core 2, socket 0)
+[ 9412.999715] llama-batched-b[52524]: segfault at 71e5f327f040 ip 000071ecb8c64816 sp 000071ded400b638 error 4
+[ 9412.999715] llama-batched-b[52523]: segfault at 71e5eb2ff040 ip 000071ecb8c64816 sp 000071ded480c638 error 4
+## symbols (nm -C -S): function containing each faulting offset
+0000000000073950 0000000000004223 t void (anonymous namespace)::tinygemm_kernel_amx<block_q8_0, block_q8_0, float, 32, 0>(int, int, int, void const*, void const*, float*, int) [clone .constprop.0]
+0000000000064790 0000000000000325 t (anonymous namespace)::tinygemm_kernel_vnni<block_q8_0, block_q8_0, float, 1, 64, 32>::apply(int, void const*, void const*, float*, int)
+000000000000b800 0000000000000200 b (anonymous namespace)::tinygemm_kernel_amx<block_q8_0, block_q8_0, float, 32, 0>(int, int, int, void const*, void const*, float*, int)::Tile23
+000000000000a800 0000000000001000 b (anonymous namespace)::tinygemm_kernel_amx<block_q8_0, block_q8_0, float, 32, 0>(int, int, int, void const*, void const*, float*, int)::TileC0
+0000000000009800 0000000000001000 b (anonymous namespace)::tinygemm_kernel_amx<block_q8_0, block_q8_0, float, 32, 0>(int, int, int, void const*, void const*, float*, int)::TileC1
+## faulting instructions
+0000000000074d5d <_ZN12_GLOBAL__N_119tinygemm_kernel_amxI10block_q8_0S1_fLi32ELi0EEEviiiPKvS3_PT1_i.constprop.0+0x140d>:
+   74d5d:	mov    $0x40,%ebx
+   74d62:	tileloadd (%rcx,%rbx,1),%tmm0
+   74d68:	tilezero %tmm4
+0000000000064810 <_ZN12_GLOBAL__N_120tinygemm_kernel_vnniI10block_q8_0S1_fLi1ELi64ELi32EE5applyEiPKvS4_Pfi+0x80>:
+   64810:	vpaddb %zmm1,%zmm15,%zmm15
+   64816:	vpdpbusd (%rax),%zmm15,%zmm0
