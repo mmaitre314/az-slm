@@ -6,7 +6,7 @@ exactly input_len tokens in one generate() call (greedy, ignore_eos, output_len 
 times the whole call. Appends one JSON line per measurement to $OUT (default
 /mnt/data/results/openvino.jsonl). Same workloads as E09 (vllm_bench.sh).
 
-usage: openvino_bench.py MODEL_DIR --tag TAG [--workloads prefill:512:1,decode:32:256,mixed:512:128]
+usage: openvino_bench.py MODEL_DIR --tag TAG [--workloads prefill:512:1[:1/4/16],decode:32:256,mixed:512:128]
        [--batches 1,4,16,32] [--reps 2] [--props JSON] [--max-num-seqs N] [--cache-gb N]
        [--max-batched-tokens N] [--prefix-caching] [--shared-prefix L] [--note TEXT]
 """
@@ -166,12 +166,13 @@ elif args.warmup == "quick":
 print(f"warmup {time.time() - t:.1f}s rss {C.read_proc_status('VmRSS')} GB", flush=True)
 
 for wl in args.workloads.split(","):
-    name, i, o = wl.split(":")
-    i, o = int(i), int(o)
+    parts = wl.split(":")  # name:in:out[:n1/n2/...]  (optional per-workload batch list)
+    name, i, o = parts[0], int(parts[1]), int(parts[2])
+    batches = [int(x) for x in parts[3].split("/")] if len(parts) > 3 else [int(x) for x in args.batches.split(",")]
     shared = 0
     if name.startswith("shared"):  # e.g. shared256:512:128 -> 256-token shared prefix
         shared = int(name[len("shared"):])
-    for n in [int(x) for x in args.batches.split(",")]:
+    for n in batches:
         for rep in range(1, args.reps + 1):
             row = run_once(n, i, o, shared)
             row.update({"workload": name, "rep": rep})

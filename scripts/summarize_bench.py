@@ -34,11 +34,15 @@ def main():
     ap.add_argument("dir", type=pathlib.Path)
     ap.add_argument("--price", type=float, required=True, help="VM price actually paid, USD/hour")
     ap.add_argument("--spot-price", type=float, help="Spot price for the same size, USD/hour")
+    ap.add_argument("--control", help="name of the no-AMX build to compare with `build` "
+                    "(default: build-native-noamx if present, else build-noamx)")
     args = ap.parse_args()
     prices = [("price", args.price)] + ([("spot", args.spot_price)] if args.spot_price else [])
 
     bench = load(args.dir / "llama-bench.jsonl")
     if bench:
+        control = args.control or ("build-native-noamx" if any(b["build"] == "build-native-noamx" for b in bench)
+                                   else "build-noamx")
         r = collections.defaultdict(dict)
         sizes = {}
         for b in bench:
@@ -47,12 +51,12 @@ def main():
             sizes[b["quant"]] = b.get("model_size", 0) / 1e9
         rows = []
         for q, v in r.items():
-            pp, ppn = v.get(("build", "pp")), v.get(("build-noamx", "pp"))
-            tg, tgn = v.get(("build", "tg")), v.get(("build-noamx", "tg"))
+            pp, ppn = v.get(("build", "pp")), v.get((control, "pp"))
+            tg, tgn = v.get(("build", "tg")), v.get((control, "tg"))
             rows.append([q, f"{sizes[q]:.1f}", f"{pp:.1f}" if pp else "-", f"{ppn:.1f}" if ppn else "-",
                          f"{pp / ppn:.2f}x" if pp and ppn else "-", f"{tg:.2f}" if tg else "-",
                          f"{tgn:.2f}" if tgn else "-", f"{tg / tgn:.2f}x" if tg and tgn else "-"])
-        print("### llama.cpp, one sequence (llama-bench pp512 / tg128, 8 threads)\n")
+        print(f"### llama.cpp, one sequence (llama-bench pp512 / tg128, 8 threads; no-AMX = {control})\n")
         print(table(["quant", "GB", "prefill t/s AMX", "prefill t/s no-AMX", "AMX gain",
                      "decode t/s AMX", "decode t/s no-AMX", "AMX gain"], rows))
         print()
@@ -64,7 +68,8 @@ def main():
             row = [b["quant"], b["build"], b["pl"], f"{b['speed_pp']:.1f}", f"{b['speed_tg']:.2f}", f"{b['speed']:.1f}"]
             row += [f"{usd_per_mtok(b['speed_pp'], p):.2f} / {usd_per_mtok(b['speed_tg'], p):.2f}" for _, p in prices]
             rows.append(row)
-        print("### llama.cpp, parallel sequences (llama-batched-bench, 512-token prompts, 128 generated each)\n")
+        print(f"### llama.cpp, parallel sequences (llama-batched-bench, {batched[0].get('pp', 512)}-token prompts, "
+              f"{batched[0].get('tg', 128)} generated each)\n")
         print(table(["quant", "build", "sequences", "prefill t/s", "decode t/s", "total t/s"]
                     + [f"$/M tok prefill / decode ({n})" for n, _ in prices], rows))
         print()

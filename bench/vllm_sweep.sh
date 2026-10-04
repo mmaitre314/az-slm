@@ -3,7 +3,8 @@
 # (workload, batch size) combination, appending rows to /mnt/data/results/vllm-sweep.jsonl.
 # Env: MODEL (path under /mnt/data/models), RUN (label, e.g. t8/t16), BATCHES, WORKLOADS, IMAGE,
 # KV_GB, BIND (OpenMP CPU list; default one thread per physical core), ARGS (extra vllm_sweep.py
-# args). A persistent compile cache (/mnt/data/vllm-cache) avoids recompiling on every launch.
+# args), DOCKER_ENV (extra docker args, e.g. "-e ONEDNN_MAX_CPU_ISA=AVX512_CORE_BF16" for an AMX-off
+# control). A persistent compile cache (/mnt/data/vllm-cache) avoids recompiling on every launch.
 set -uo pipefail
 IMAGE=${IMAGE:-vllm/vllm-openai-cpu:latest-x86_64}
 MODEL=${MODEL:-Qwen/Qwen3.8-27B}
@@ -14,14 +15,14 @@ BATCHES=${BATCHES:-1,4,16,32}
 WORKLOADS=${WORKLOADS:-prefill:512:1,decode:32:256,mixed:512:128}
 OUT=/mnt/data/results
 mkdir -p "$OUT" /mnt/data/vllm-cache
-tag=$(echo "$MODEL" | tr '/' '_')-$RUN
+tag=$(echo "$MODEL" | tr '/' '_')-$RUN${TAG_SUFFIX:-}
 LOG="$OUT/vllm-sweep-$tag.log"
 echo "== $MODEL run=$RUN bind=$BIND batches=$BATCHES workloads=$WORKLOADS $(date -u +%T)"
 { echo "== $tag $(date -u +%T)"; top -bn1 -o %CPU | sed -n 1,12p; } >> "$OUT/vllm-top.log"
 docker run --rm --privileged --shm-size 8g -v /mnt/data:/mnt/data -v /opt/azslm/bench:/bench:ro \
   -v /mnt/data/vllm-cache:/root/.cache/vllm \
-  -e VLLM_CPU_KVCACHE_SPACE="$KV_GB" -e VLLM_CPU_OMP_THREADS_BIND="$BIND" \
-  --entrypoint python3 "$IMAGE" /bench/vllm_sweep.py "/mnt/data/models/$MODEL" --run "$RUN" \
+  -e VLLM_CPU_KVCACHE_SPACE="$KV_GB" -e VLLM_CPU_OMP_THREADS_BIND="$BIND" ${DOCKER_ENV:-} \
+  --entrypoint python3 "$IMAGE" /bench/vllm_sweep.py "/mnt/data/models/$MODEL" --run "$RUN${TAG_SUFFIX:-}" \
   --batches "$BATCHES" --workloads "$WORKLOADS" ${ARGS:-} > "$LOG" 2>&1
 rc=$?
 echo "rc=$rc"

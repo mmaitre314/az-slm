@@ -53,7 +53,7 @@ input and output tokens per stack, quantization and VM, with the quality cost of
 | [E10](E10-openvino-genai/) | OpenVINO GenAI: INT4/INT8 weights, continuous batching | bench-lc2 | runner | running |
 | [E11](E11-ovms/) | OpenVINO Model Server with continuous batching (OpenAI API) | bench-lc2 | runner | queued |
 | [E12](E12-speculative-decoding/) | Speculative decoding: draft model, MTP head | bench-v6 (+ E09/E10 VMs) | runner | running (llama.cpp part) |
-| [E13](E13-emerald-vs-granite/) | Emerald Rapids (v6) vs Granite Rapids (v7), same llama.cpp runs | bench-v6 | runner (scripted) | done, report pending |
+| [E13](E13-emerald-vs-granite/) | Emerald Rapids (v6) vs Granite Rapids (v7), same llama.cpp runs | bench-v6 | runner (scripted) | done |
 | E14 | SGLang CPU backend (Intel AMX kernels) | bench-vllm | runner | candidate |
 | E15 | Cross-stack cost and quality summary, recommendation | – | orchestrator | planned |
 | E16 | Task-level quality check across stacks and formats (structured-output agreement with BF16) | any | runner | planned |

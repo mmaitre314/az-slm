@@ -1,0 +1,24 @@
+== cpu
+CPU(s): 16
+Model name: INTEL(R) XEON(R) PLATINUM 8573C
+Thread(s) per core: 2
+Core(s) per socket: 8
+Socket(s): 1
+CPU(s) scaling MHz: 113%
+L3 cache: 260 MiB (1 instance)
+NUMA node(s): 1
+amx flags (cpuinfo): amx_bf16 amx_int8 amx_tile 
+amx (cpuid leaf 7):  AMX-FP16: FP16 tile operations = false;
+kernel: 6.17.0-1022-azure
+== kernel AMX permission (arch_prctl)
+XCOMP_SUPP rc=0 mask=0x600e7 xtiledata_supported=True
+REQ_XCOMP_PERM(XTILEDATA) rc=0 errno=0 -> AMX usable
+== memory / disks
+               total        used        free      shared  buff/cache   available
+Mem:             125           2          46           0          78         123
+/dev/md127      865G   74G  748G   9% /mnt/data
+== setup
+setup-done: 0
+llama.cpp: 11fe02151f79c41d0d4af7da708755d73b9c0da6 2026-10-04T09:07:47+09:00
+GGML_AMX_TILE:BOOL=OFF GGML_AVX512:BOOL=OFF GGML_AVX512_VBMI:BOOL=OFF GGML_AVX512_VNNI:BOOL=OFF GGML_NATIVE:BOOL=ON 
+llama-batched-bench llama-bench llama-cli llama-perplexity llama-server 

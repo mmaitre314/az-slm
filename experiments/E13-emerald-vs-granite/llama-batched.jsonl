@@ -1,0 +1,15 @@
+{"quant":"Q4_0","build":"build-native-noamx","pl":1,"pp":128,"tg":128,"n_kv":256,"n_threads":8,"t_pp":8.373124,"speed_pp":15.287006,"t_tg":38.990753,"speed_tg":3.282830,"t":47.363876,"speed":5.404963}
+{"quant":"Q4_0","build":"build-native-noamx","pl":4,"pp":128,"tg":128,"n_kv":1024,"n_threads":8,"t_pp":32.466663,"speed_pp":15.770022,"t_tg":57.321430,"speed_tg":8.932087,"t":89.788094,"speed":11.404630}
+{"quant":"Q4_0","build":"build-native-noamx","pl":8,"pp":128,"tg":128,"n_kv":2048,"n_threads":8,"t_pp":64.761917,"speed_pp":15.811762,"t_tg":107.815140,"speed_tg":9.497739,"t":172.577057,"speed":11.867163}
+{"quant":"Q4_0","build":"build-native-noamx","pl":16,"pp":128,"tg":128,"n_kv":4096,"n_threads":8,"t_pp":129.765091,"speed_pp":15.782365,"t_tg":174.094116,"speed_tg":11.763752,"t":303.859192,"speed":13.479928}
+{"quant":"Q4_0","build":"build-native-noamx","pl":32,"pp":128,"tg":128,"n_kv":8192,"n_threads":8,"t_pp":259.534607,"speed_pp":15.782096,"t_tg":337.611084,"speed_tg":12.132303,"t":597.145691,"speed":13.718596}
+{"quant":"Q4_K_M","build":"build-native-noamx","pl":1,"pp":128,"tg":128,"n_kv":256,"n_threads":8,"t_pp":6.349313,"speed_pp":20.159662,"t_tg":39.566051,"speed_tg":3.235097,"t":45.915363,"speed":5.575476}
+{"quant":"Q4_K_M","build":"build-native-noamx","pl":4,"pp":128,"tg":128,"n_kv":1024,"n_threads":8,"t_pp":24.475140,"speed_pp":20.919186,"t_tg":56.484097,"speed_tg":9.064498,"t":80.959236,"speed":12.648340}
+{"quant":"Q4_K_M","build":"build-native-noamx","pl":8,"pp":128,"tg":128,"n_kv":2048,"n_threads":8,"t_pp":48.948204,"speed_pp":20.920073,"t_tg":108.251450,"speed_tg":9.459457,"t":157.199646,"speed":13.028019}
+{"quant":"Q4_K_M","build":"build-native-noamx","pl":16,"pp":128,"tg":128,"n_kv":4096,"n_threads":8,"t_pp":98.960800,"speed_pp":20.695063,"t_tg":150.583511,"speed_tg":13.600427,"t":249.544312,"speed":16.413919}
+{"quant":"Q4_K_M","build":"build-native-noamx","pl":32,"pp":128,"tg":128,"n_kv":8192,"n_threads":8,"t_pp":197.593689,"speed_pp":20.729406,"t_tg":285.443817,"speed_tg":14.349584,"t":483.037506,"speed":16.959345}
+{"quant":"Q8_0","build":"build-native-noamx","pl":1,"pp":128,"tg":128,"n_kv":256,"n_threads":8,"t_pp":10.219467,"speed_pp":12.525115,"t_tg":58.162384,"speed_tg":2.200735,"t":68.381851,"speed":3.743683}
+{"quant":"Q8_0","build":"build-native-noamx","pl":4,"pp":128,"tg":128,"n_kv":1024,"n_threads":8,"t_pp":40.196655,"speed_pp":12.737378,"t_tg":61.737099,"speed_tg":8.293231,"t":101.933754,"speed":10.045740}
+{"quant":"Q8_0","build":"build-native-noamx","pl":8,"pp":128,"tg":128,"n_kv":2048,"n_threads":8,"t_pp":80.598579,"speed_pp":12.704939,"t_tg":111.353790,"speed_tg":9.195915,"t":191.952362,"speed":10.669313}
+{"quant":"Q8_0","build":"build-native-noamx","pl":16,"pp":128,"tg":128,"n_kv":4096,"n_threads":8,"t_pp":161.399078,"speed_pp":12.689044,"t_tg":208.070084,"speed_tg":9.842837,"t":369.469177,"speed":11.086175}
+{"quant":"Q8_0","build":"build-native-noamx","pl":32,"pp":128,"tg":128,"n_kv":8192,"n_threads":8,"t_pp":323.127808,"speed_pp":12.676099,"t_tg":409.337341,"speed_tg":10.006416,"t":732.465149,"speed":11.184150}

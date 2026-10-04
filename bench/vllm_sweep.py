@@ -41,17 +41,24 @@ def main():
     load_s = time.time() - t0
     print(f"loaded in {load_s:.0f}s", flush=True)
     rng = random.Random(0)
+    warm_sp = SamplingParams(temperature=0, max_tokens=8, ignore_eos=True)
 
     def make(n, length):
         return [{"prompt_token_ids": [rng.randrange(1000, 100000) for _ in range(length)]} for _ in range(n)]
+
+    if not args.no_warmup:  # lazy initialisation (weight pages, thread pool, first oneDNN primitives)
+        t = time.perf_counter()
+        llm.generate([{"prompt_token_ids": [rng.randrange(1000, 100000) for _ in range(512)]} for _ in range(4)],
+                     warm_sp, use_tqdm=False)
+        print(f"global warm-up (4 x 512 in, 8 out) took {time.perf_counter() - t:.1f}s", flush=True)
 
     for spec in args.workloads.split(","):
         name, in_len, out_len = spec.split(":")
         in_len, out_len = int(in_len), int(out_len)
         for batch in [int(b) for b in args.batches.split(",")]:
             if not args.no_warmup:
-                llm.generate(make(batch, in_len), SamplingParams(temperature=0, max_tokens=2, ignore_eos=True),
-                             use_tqdm=False)
+                llm.generate(make(batch, min(in_len, 64)),
+                             SamplingParams(temperature=0, max_tokens=2, ignore_eos=True), use_tqdm=False)
             sp = SamplingParams(temperature=0, max_tokens=out_len, ignore_eos=True)
             prompts = make(batch, in_len)
             t = time.perf_counter()

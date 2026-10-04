@@ -39,6 +39,7 @@ def main():
     for (tag, st), rs in by.items():
         if tag.startswith(args.base):
             base_texts[st] = {r["i"]: r["text"] for r in rs if r.get("kind") != "summary"}
+    # dec t/s: one sequence = decode rate; several = "all slots decoding / wall-clock incl. prefill and ramp-up"
     hdr = ["tag", "set", "n_in", "tokens", "dec t/s", "accept", "tok/step", "s/step", "same/total",
            "first diffs (req:char)"]
     out = []
@@ -64,7 +65,7 @@ def main():
         tps = f"{s['tokens'] / steps:.2f}" if s["n_inflight"] == 1 and steps > 0 else "-"
         sps = f"{dec_s / steps:.3f}" if s["n_inflight"] == 1 and steps > 0 else "-"
         out.append([tag, st, s["n_inflight"], s["tokens"], s["mean_decode_tps"] if s["n_inflight"] == 1 else
-                    f"{s['sum_slot_tps']}/{s['agg_wall_tps']}", "-" if acc is None else f"{acc:.2f}",
+                    f"{s['n_inflight'] * s['mean_decode_tps']:.2f}/{s['agg_wall_tps']}", "-" if acc is None else f"{acc:.2f}",
                     tps, sps, f"{same}/{len(reqs)}", " ".join(diffs)])
     if args.md:
         print("| " + " | ".join(hdr) + " |")
