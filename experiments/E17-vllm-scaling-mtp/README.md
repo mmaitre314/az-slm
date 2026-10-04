@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| Status | running: background job `chain` on `b2-vllm` (`PROFILE=e17`), started 2026-10-04 12:49 UTC; expected ~3 h |
+| Status | done (chain 12:49–16:56 UTC, exit 0, 22 runs, no failed rows); harvested and VM deleted 17:10 UTC. MTP on real text: see the follow-up (run on `b2-v6`) |
 | VM | `b2-vllm` (Standard_E16ds_v7, eastus2, Regular): Xeon 6 6973P-C, 8 cores / 16 threads, 128 GiB |
-| Stack | vLLM CPU Docker image `vllm/vllm-openai-cpu:latest-x86_64` (record vLLM version and image digest); llama.cpp from cloud-init for the reference run |
-| Model | `Avesed/Qwen3.8-27B-INT8-W8A8`, `Avesed/Qwen3.8-27B-INT4-W4A16` (record revisions); `bartowski/Qwen3.8-27B-GGUF` Q4_K_M for the reference run |
-| Dates | chain started 2026-10-04 12:49 UTC (smoke test 12:32-12:47 UTC); finished: – |
+| Stack | vLLM 0.31.0, torch 2.13.0+cpu, image `vllm/vllm-openai-cpu@sha256:8024248339dc…` (built 2026-10-03); llama.cpp `dd266785` (cloud-init build, AMX) for the reference run |
+| Model | `Avesed/Qwen3.8-27B-INT8-W8A8` @ `86b8427a5e`, `Avesed/Qwen3.8-27B-INT4-W4A16` @ `135ecac28b`; `bartowski/Qwen3.8-27B-GGUF` Q4_K_M for the reference run |
+| Dates | 2026-10-04 12:49–16:56 UTC (smoke test 12:32–12:47 UTC) |
 | Raw data | `raw/` (harvested with `deploy.py harvest`) |
 
 ## Question
@@ -89,10 +89,111 @@ tokens cuts GSM8K wall time by 15–35% at 64 sequences.
 
 ## Measurements
 
+All rows: `vllm bench throughput`, random-token prompts, all requests submitted at once, one run
+each, 8 threads (one per physical core) unless marked t16. Output tok/s = prompts × output length / wall.
+Raw: [`raw/vllm.jsonl`](raw/vllm.jsonl), log [`raw/chain.log`](raw/chain.log).
+
+**Reference run** (`llama-bench` Q4_K_M, AMX build, 8 threads, 3 repetitions): pp512 25.7 ± 0.4 tok/s,
+tg128 3.13 ± 0.06 tok/s. E03 measured 28.7 / 3.88 on `bench-e16v7` with an older llama.cpp commit
+(`11fe021`), so this instance is ~10% slower for prefill and ~19% slower for decode, though part of the gap may be the commit.
+
+**W8A8, batch scaling (t8):**
+
+| workload (in/out) | prompts | wall (s) | total tok/s | output tok/s | peak RSS (GB) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| prefill (512/1) | 16 | 49.9 | 164.6 | – | 57.3 |
+| prefill (512/1) | 32 | 91.8 | 178.9 | – | 56.4 |
+| prefill (512/1) | 64 | 167.1 | 196.4 | – | 65.3 |
+| decode (32/256) | 16 | 151.8 | 30.3 | 27.0 | 56.3 |
+| decode (32/256) | 32 | 185.5 | 49.7 | 44.2 | 57.1 |
+| decode (32/256) | 64 | 296.8 | 62.1 | 55.2 | 65.3 |
+| mixed (512/128) | 16 | 117.9 | 86.8 | 17.4 | 56.5 |
+| mixed (512/128) | 32 | 176.3 | 116.1 | 23.2 | 56.9 |
+| mixed (512/128) | 64 | 304.8 | 134.4 | 26.9 | 65.1 |
+
+E09 measured W8A8 at 16 prompts on another E16ds_v7 instance: prefill 198.1, decode 36.2, mixed 102.3
+total tok/s. This instance is 17–18% slower on the same runs, consistent with the reference run.
+
+**W4A16 (t8):**
+
+| workload | prompts | wall (s) | total tok/s | output tok/s |
+| --- | ---: | ---: | ---: | ---: |
+| prefill (512/1) | 16 | 259.0 | 31.7 | – |
+| prefill (512/1) | 64 | 1008.1 | 32.6 | – |
+| decode (32/256) | 16 | 356.3 | 12.9 | 11.5 |
+| decode (32/256) | 64 | 725.6 | 25.4 | 22.6 |
+| mixed (512/128) | 16 | 422.5 | 24.2 | 4.9 |
+| mixed (512/128) | 64 | 1367.0 | 30.0 | 6.0 |
+
+**W8A8 with 16 threads** (all logical CPUs, 64 prompts): prefill 79.8 total tok/s (vs 196.4 with 8),
+mixed 66.4 (vs 134.4).
+
+**W8A8 with MTP** (`--speculative-config {"method":"mtp","num_speculative_tokens":N}`; the checkpoint
+keeps the 15 `mtp.*` tensors in BF16 and vLLM loads them as `Qwen3_5MTP`):
+
+| run | workload | prompts | total tok/s | vs no MTP |
+| --- | --- | ---: | ---: | ---: |
+| mtp1 | decode | 16 | 21.8 | −28% |
+| mtp1 | mixed | 16 | 58.5 | −33% |
+| mtp1 | decode | 64 | 34.8 | −44% |
+| mtp1 | mixed | 64 | 84.6 | −37% |
+| mtp2 | decode | 16 | 17.6 | −42% |
+
+vLLM's spec-decode log lines during these runs show acceptance of 5–13% of drafted tokens (mean
+acceptance length 1.05–1.13): random-token prompts make the continuation unpredictable. MTP also
+shrinks the KV cache (16 GiB holds 46,933 tokens instead of 66,446).
+
 ## Cost per token
+
+[COST_MODEL.md](../COST_MODEL.md): eastus2 E16ds_v7, $1.681/h all-in on demand, $0.325/h at Spot.
+Assumptions 1–4 apply; each run's wall time is charged entirely to its workload.
+
+| configuration | $/M input (prefill run) | $/M output (decode run) | $/M blended 512/128 (mixed run) | blended at Spot |
+| --- | ---: | ---: | ---: | ---: |
+| W8A8, 16 prompts | 2.84 | 17.3 | 5.38 | 1.04 |
+| W8A8, 32 prompts | 2.61 | 10.6 | 4.02 | 0.78 |
+| **W8A8, 64 prompts** | **2.38** | **8.46** | **3.47** | **0.67** |
+| W8A8, 64 prompts, 16 threads | 5.85 | – | 7.04 | 1.36 |
+| W8A8, 64 prompts, MTP 1 (random prompts) | – | 15.1 | 5.52 | 1.07 |
+| W4A16, 16 prompts | 14.7 | 40.6 | 19.3 | 3.73 |
+| W4A16, 64 prompts | 14.3 | 20.7 | 15.6 | 3.02 |
+
+On E09's faster instance, the same scaling (×1.55 from 16 to 64 prompts on mixed) would give about
+$2.9/M blended.
 
 ## Analysis
 
+_Orchestrator, 2026-10-04._
+
+- **H1 (batch scaling) confirmed, at the top of the predicted range.** Mixed 512/128 throughput rises 55% from 16 to 64
+  prompts (86.8 → 134.4 tok/s), and blended cost falls from $5.38 to $3.47 per million tokens. Decode does
+  most of it: output tok/s doubles (27.0 → 55.2) while prefill rises 19% (164.6 → 196.4).
+  At 64 decode sequences a step takes 64/55.2 ≈ 1.16 s, so per-sequence work (GDN state updates,
+  attention, sampling) now dominates the ~0.3 s of weight reads. The curve is flattening
+  (+34% from 16 to 32, +16% from 32 to 64), so 128 prompts might add another ~10%.
+- **H2 (W4A16) rejected, in both phases.** W4A16 is slower everywhere: prefill 5–6× slower
+  (32 tok/s; the INT4 path doesn't use AMX-INT8 and runs as many tiny dequantize-and-multiply
+  kernels), and decode is 2.3× slower at 16 sequences despite reading half the bytes. vLLM's CPU INT4
+  (compressed-tensors W4A16) path is not optimized; W8A8 is the format to use on this stack.
+- **H3 (threads) confirmed, much more strongly than predicted.** 16 threads halve throughput (prefill −59%, mixed −51%).
+  Two threads per core contend for the one AMX unit, and the OpenMP barriers wait on the slowest
+  sibling. Always bind one thread per physical core for vLLM. For llama.cpp, E08 found the opposite.
+- **H4 (MTP) inconclusive here, by design.** With random-token prompts the MTP head accepts only 5–13% of
+  drafts, so every drafted token is wasted work: −28% to −44%. This says nothing about real text,
+  which the follow-up below measures.
+
 ## Threats to validity
 
+- One instance, ~10–19% slower than the E03/E09 instances by the reference run. Compare configurations within this experiment;
+  absolute costs carry instance variance (9–25%, E08).
+- Random-token prompts with fixed output lengths (`ignore_eos`): fine for throughput, wrong for
+  speculative decoding (no predictable continuation).
+- Each run pays ~2.5–3 min of startup (vLLM 0.31's AOT compile cache fails to load), excluded from
+  `elapsed_time`; it matters for small jobs, not for the steady-state cost.
+
 ## Next steps
+
+1. MTP on real text: see the follow-up results (GSM8K on `b2-v6`).
+2. 128 prompts with a larger KV cache, to see where the scaling curve flattens.
+3. vLLM runtime knobs (tcmalloc, the AOT compile-cache error) and a shared-prefix workload (prefix
+   caching), as in [RESEARCH.md](../RESEARCH.md).
