@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| Status | planned |
+| Status | running (job `e16` on `b2-qual`, started 13:02 UTC) |
 | VM | `b2-qual` (Standard_E16ds_v7, centralus, Regular) |
-| Stack | same vLLM image as E17 (record the digest) |
-| Model | `Qwen/Qwen3.8-27B` (BF16, reference), `Avesed/Qwen3.8-27B-INT8-W8A8`, `Avesed/Qwen3.8-27B-INT4-W4A16` (record revisions) |
-| Dates | |
+| Stack | vLLM CPU Docker image `vllm/vllm-openai-cpu:latest-x86_64` = vLLM 0.31.0, torch 2.13.0+cpu, digest `sha256:8024248339dc6878daa5349344ed29d49c8a6732f6bdf7400fda32ce33e4b30b` (image created 2026-10-03) |
+| Model | `Qwen/Qwen3.8-27B` @ `1d4bf0f2ff` (BF16, reference), `Avesed/Qwen3.8-27B-INT8-W8A8` @ `86b8427a5e`, `Avesed/Qwen3.8-27B-INT4-W4A16` @ `135ecac28b` (full SHAs in `raw/model-revisions.txt`) |
+| Dates | 2026-10-04 (setup and smoke test 12:28-12:50 UTC; full chain started 13:02 UTC) |
 | Raw data | `raw/` (per-question answers for each model, scores) |
 
 ## Question
@@ -25,6 +25,36 @@ _Written before the results were known._
   questions, comparable to llama.cpp Q4_K_M's 93.6% top-1 token agreement (E06).
 - **H3**: disagreements cluster on questions BF16 itself gets wrong or answers with low
   confidence, so accuracy drops less than agreement does.
+
+## Setup
+
+- VM `b2-qual`: Standard_E16ds_v7, centralus, Regular priority, 8 cores / 16 threads, 128 GiB. Container run with
+  `--privileged --shm-size 8g`, `VLLM_CPU_KVCACHE_SPACE=16` (GiB; 66k KV tokens, enough for 64 sequences of ~700 tokens),
+  `VLLM_CPU_OMP_THREADS_BIND` = one thread per physical core (8 threads), as in E09.
+- `vllm.LLM(dtype=bfloat16, max_model_len=2048, max_num_seqs=64, limit_mm_per_prompt={image:0, video:0})`, torch.compile
+  on (the benchmark default; the 3-prompt correctness check of `vllm_correct.py` runs eager). If the compile run fails
+  the chain retries once with `--enforce-eager` for the benchmarks that have no result yet.
+- Datasets from Hugging Face on the VM (`hf download --repo-type dataset`): `openai/gsm8k` @ `740312add88f` (test split, 1319 rows,
+  first 200 used) and `cais/mmlu` @ `c30699e8356d` (`all/test`, 14042 rows; 400 sampled with `random.Random(16).sample`,
+  indices sorted). Converted from parquet to JSONL inside the container (`bench/e16_convert.py`; the container has pyarrow and pandas).
+- Prompts (chat template, `enable_thinking=False`, greedy, one `llm.chat` batch per benchmark):
+  GSM8K "Solve the following math problem step by step, keeping the reasoning concise. Finish with a final line of the
+  form '#### <number>' ..." (512 new tokens); MMLU "The following is a multiple choice question about <subject>. Answer with
+  only the letter (A, B, C or D) ... Answer:" (8 new tokens). "Keeping the reasoning concise" was added after the first smoke
+  test showed ~280-token Markdown solutions with a tail near the 512 limit; `n_truncated` in the summary counts the rest.
+- Scoring (`bench/quality_tasks.py`): GSM8K number after the last `####` (else the last number), commas stripped, numeric
+  compare; MMLU first standalone A-D letter. Per-question rows go to `quality-tasks.jsonl` (answer, reference, correct,
+  method, output tokens, finish reason, first 300 characters), one summary row per (model, benchmark) to `quality-summary.jsonl`
+  (accuracy, n, Wilson 95% CI, wall seconds, output tokens, truncated/no-answer counts).
+- Chain `bench/e16_chain.sh` (job `e16`): setup (3 attempts) -> datasets (3 attempts) -> for BF16, W8A8, W4A16: correctness
+  check (2 attempts), quality run (2 attempts). Failures are logged and the chain continues. Progress is in
+  `chain.log`; results are saved to the OS disk after every step. 
+
+- Smoke test (not part of the results): W8A8 (5 questions per benchmark) and W4A16 (8 per benchmark) answered
+  every question correctly with `marker`/`letter` extraction (e.g. GSM8K ids 0-4 -> 18, 3, 70000, 540, 20 =
+  references; MMLU ids 3, 95, 101, 149, 165 -> B, C, B, C, B = references). Timings from the smoke tests: model load with
+  torch.compile 145 s (W8A8) / 346 s (W4A16); W4A16 prefill is about 4x slower than W8A8 (MMLU: 948 prompt tokens in 25.7 s vs
+  658 in 4.2 s). Expected chain duration 2-3 h, W4A16 the longest.
 
 ## Method
 
