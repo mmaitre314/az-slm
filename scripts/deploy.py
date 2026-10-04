@@ -17,12 +17,14 @@ never written anywhere: VMs are driven through Run Command, not SSH.
 
 import argparse
 import base64
+import io
 import json
 import pathlib
 import shlex
 import struct
 import subprocess
 import sys
+import tarfile
 
 import arm
 
@@ -209,6 +211,27 @@ def cmd_run(args):
         raise SystemExit(f"script exited with {code}")
 
 
+def cmd_push(args):
+    """Copy a small local directory (e.g. bench/) to the VM, for scripts that call each other."""
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+        for f in sorted(pathlib.Path(args.src).iterdir()):
+            if f.is_file():
+                tar.add(f, arcname=f.name)
+    b64 = base64.encodebytes(buf.getvalue()).decode()
+    if len(b64) > 200_000:
+        fail(f"{args.src} is too large to push via Run Command ({len(b64)} bytes base64)")
+    dest = shlex.quote(args.dest)
+    stdout, _, code = run_script(args.vm, f"""mkdir -p {dest}
+base64 -d > /tmp/azslm-push.tgz <<'AZSLM_PUSH_EOF'
+{b64}AZSLM_PUSH_EOF
+tar xzf /tmp/azslm-push.tgz -C {dest} && rm -f /tmp/azslm-push.tgz && chmod +x {dest}/*.sh 2>/dev/null
+ls {dest} | tr '\\n' ' '""")
+    out(stdout)
+    if code != 0:
+        raise SystemExit(code)
+
+
 def cmd_job(args):
     """Status of a background job started with `run --background NAME`."""
     n = args.name
@@ -303,6 +326,11 @@ def main():
     r.add_argument("-e", "--env", action="append", default=[], help="KEY=VALUE exported before the script")
     r.add_argument("--background", metavar="NAME", help="run as a background job (see `job`)")
     r.set_defaults(fn=cmd_run)
+    pu = sub.add_parser("push", help="copy a small local directory (default bench/) to the VM")
+    pu.add_argument("vm")
+    pu.add_argument("src", nargs="?", default="bench")
+    pu.add_argument("--dest", default="/opt/azslm/bench")
+    pu.set_defaults(fn=cmd_push)
     j = sub.add_parser("job", help="status and log tail of a background job")
     j.add_argument("vm")
     j.add_argument("name")
