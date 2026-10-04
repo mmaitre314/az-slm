@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Status | queued |
-| VM | `bench-vllm` (Standard_E16ds_v7, westus3, Regular): Xeon 6 6973P-C, 8 cores / 16 threads, 128 GiB |
+| VM | `bench-e16v7` (Standard_E16ds_v7, eastus2, Regular): Xeon 6 6973P-C, 8 cores / 16 threads, 128 GiB. (First assigned `bench-vllm` in westus3; that VM was deleted idle by the watchdog after its runner hit a usage limit.) |
 | Stack | vLLM CPU Docker image `vllm/vllm-openai-cpu:latest-x86_64` (record version and digest) |
 | Model | `Qwen/Qwen3.8-27B` (BF16), `Avesed/Qwen3.8-27B-INT8-W8A8`, `Avesed/Qwen3.8-27B-INT4-W4A16` (community quants; record revisions) |
 | Raw data | `vllm.jsonl`, short logs |
@@ -43,7 +43,7 @@ _To be filled by the runner/reporter._
 
 ## Cost per token
 
-_To be filled (COST_MODEL.md; westus3 E16ds_v7 at $1.681/h all-in, Spot $0.325/h all-in)._
+_To be filled (COST_MODEL.md; eastus2 E16ds_v7 at $1.681/h all-in, Spot $0.325/h all-in)._
 
 ## Analysis
 

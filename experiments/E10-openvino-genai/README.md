@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Status | queued |
-| VM | `bench-ov` (Standard_E16ds_v7, centralus, Regular): Xeon 6 6973P-C, 8 cores / 16 threads, 128 GiB |
+| VM | `bench-lc2` (Standard_E16ds_v7, northcentralus, Regular): Xeon 6 6973P-C, 8 cores / 16 threads, 128 GiB. (First assigned `bench-ov` in centralus; deleted idle by the watchdog after its runner hit a usage limit.) |
 | Stack | `openvino`, `openvino-genai`, `optimum-intel` from PyPI in a venv (record versions) |
 | Model | `Qwen/Qwen3.8-27B` exported to OpenVINO IR (or a pre-converted IR from the `OpenVINO` HF org, if one exists) |
 | Raw data | `openvino.jsonl`, short logs |
@@ -49,7 +49,7 @@ _To be filled by the runner/reporter._
 
 ## Cost per token
 
-_To be filled (COST_MODEL.md; centralus E16ds_v7 at $1.615/h all-in, Spot $0.313/h all-in)._
+_To be filled (COST_MODEL.md; northcentralus E16ds_v7 at $1.681/h all-in, Spot $0.325/h all-in)._
 
 ## Analysis
 

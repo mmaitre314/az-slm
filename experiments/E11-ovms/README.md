@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Status | queued (after E10, same VM) |
-| VM | `bench-ov` (Standard_E16ds_v7, centralus, Regular) |
+| VM | `bench-lc2` (Standard_E16ds_v7, northcentralus, Regular) |
 | Stack | `openvino/model_server` Docker image (record tag/digest) with the LLM calculator (OpenAI-compatible API) |
 | Model | The best OpenVINO IR from E10 |
 | Raw data | `ovms.jsonl`, short logs |

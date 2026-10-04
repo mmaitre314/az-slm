@@ -22,7 +22,7 @@ param sshPublicKey string
 
 @description('Hours without activity before the in-VM watchdog acts.')
 @minValue(1)
-param idleHours int = 3
+param idleHours int = 1
 
 @description('What the idle watchdog does: delete frees the Spot quota; deallocate keeps the VM.')
 @allowed([
