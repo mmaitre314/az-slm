@@ -130,6 +130,42 @@ def make_progress():
     return factory
 
 
+def spec_counters(llm):
+    """Speculative-decoding counters from vLLM's in-process metrics ({} if none or unsupported)."""
+    try:
+        metrics = llm.get_metrics()
+    except Exception as e:  # older vLLM or stats disabled
+        return {"error": str(e)[:200]}
+    out = {}
+    for m in metrics:
+        if "spec_decode" not in m.name:
+            continue
+        if hasattr(m, "value"):
+            out[m.name] = out.get(m.name, 0) + m.value
+        elif hasattr(m, "values"):
+            prev = out.get(m.name, [0] * len(m.values))
+            out[m.name] = [x + y for x, y in zip(prev, m.values)]
+    return out
+
+
+def spec_delta(before, after):
+    d = {}
+    for k, v in after.items():
+        b = before.get(k)
+        if isinstance(v, list):
+            d[k] = [x - y for x, y in zip(v, b or [0] * len(v))]
+        elif isinstance(v, (int, float)):
+            d[k] = v - (b or 0)
+    drafts = d.get("vllm:spec_decode_num_drafts")
+    drafted = d.get("vllm:spec_decode_num_draft_tokens")
+    accepted = d.get("vllm:spec_decode_num_accepted_tokens")
+    if drafted:
+        d["acceptance_rate"] = round(accepted / drafted, 4)
+    if drafts:
+        d["mean_acceptance_length"] = round(1 + accepted / drafts, 3)
+    return d
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("model")
@@ -152,8 +188,11 @@ def main():
 
     run = os.environ.get("RUN", "")
     t0 = time.time()
+    extra = json.loads(args.extra)
+    if "speculative_config" in extra:
+        extra.setdefault("disable_log_stats", False)  # get_metrics() needs stats for the acceptance counters
     llm = LLM(model=args.model, dtype=args.dtype, max_model_len=args.max_model_len, max_num_seqs=args.max_num_seqs,
-              limit_mm_per_prompt={"image": 0, "video": 0}, enforce_eager=args.enforce_eager, **json.loads(args.extra))
+              limit_mm_per_prompt={"image": 0, "video": 0}, enforce_eager=args.enforce_eager, **extra)
     load_s = round(time.time() - t0, 1)
     print(f"loaded {args.model} in {load_s}s", flush=True)
     kw = {"chat_template_kwargs": {"enable_thinking": False}}
@@ -163,9 +202,11 @@ def main():
         sp = SamplingParams(temperature=0.0, max_tokens=max_tokens)
         msgs = [[{"role": "user", "content": it["prompt"]}] for it in items]
         print(f"== {bench}: {len(items)} questions, max_tokens={max_tokens} {time.strftime('%T')}", flush=True)
+        spec0 = spec_counters(llm) if "speculative_config" in extra else {}
         t = time.time()
         results = llm.chat(msgs, sp, use_tqdm=make_progress(), **kw)
         wall = round(time.time() - t, 1)
+        spec = spec_delta(spec0, spec_counters(llm)) if "speculative_config" in extra else None
 
         rows, n_correct, n_none, n_trunc, out_tok, in_tok = [], 0, 0, 0, 0, 0
         for it, res in zip(items, results):
@@ -191,7 +232,7 @@ def main():
                    "prompt_tokens": in_tok, "n_no_answer": n_none, "n_truncated": n_trunc,
                    "load_seconds": load_s, "vllm": vllm.__version__, "dtype": args.dtype,
                    "max_num_seqs": args.max_num_seqs, "enforce_eager": args.enforce_eager,
-                   "limit": args.limit, "mmlu_seed": MMLU_SEED}
+                   "limit": args.limit, "mmlu_seed": MMLU_SEED, "extra": extra, "spec": spec}
         with open(args.out_tasks, "a") as f:
             for r in rows:
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")

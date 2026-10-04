@@ -75,6 +75,18 @@ One self-contained background chain, `bench/vllm_chain.sh` (`PROFILE=e17`, the d
    CPU backend rejects it, record the error and move on.
 6. Save `top` snapshots, versions and digests.
 
+### Follow-up: MTP on real text (added 2026-10-04 13:30 UTC by the orchestrator)
+
+`vllm bench throughput --dataset-name random` feeds random-token prompts, so the MTP head drafts
+for nonsense continuations and acceptance is understated (the smoke run accepted 0 of 3 drafts).
+`bench/mtp_real_chain.sh` runs on `b2-v6` after its E18 chain (job `mtpreal`, waits on the chain lock):
+the first 200 GSM8K test questions (E16's prompt, greedy, thinking off, ≤ 512 output tokens,
+64 sequences, KV cache 24 GiB) with W8A8 and `num_speculative_tokens` 0 (baseline), 1, 2 and 3.
+Per run, `quality-summary.jsonl` holds accuracy (must match the baseline closely), wall time, output
+tokens, and vLLM's spec-decode counters (acceptance rate, mean acceptance length).
+**H5**: on real text, acceptance for 1 draft token is ≥ 80% (llama.cpp: 89%, E12), and MTP with 1–2
+tokens cuts GSM8K wall time by 15–35% at 64 sequences.
+
 ## Measurements
 
 ## Cost per token

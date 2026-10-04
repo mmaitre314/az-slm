@@ -7,7 +7,8 @@
 # A failed step is logged and the chain continues with the next one. Progress goes to
 # /mnt/data/results/chain.log; after EVERY step the results are saved with save_results.sh.
 # Env: REPOS, IMAGE, KV_GB, MAX_SEQS, LIMIT (questions per benchmark; 0 = full), BENCHES, MODELS
-# ("tag=repo ..." in run order), RUN (label stored in each result row). Smoke test: R=/mnt/data/results-smoke
+# ("tag=repo ..." in run order), RUN (label stored in each result row), QEXTRA (JSON of extra vllm.LLM kwargs,
+# e.g. a speculative_config), SKIP_CORRECT=1 (skip the 3-prompt check). Smoke test: R=/mnt/data/results-smoke
 # SAVE=0 LIMIT=5 MODELS=w8a8=Avesed/Qwen3.8-27B-INT8-W8A8 (separate output files, nothing saved to the OS disk).
 set -uo pipefail
 B=/opt/azslm/bench
@@ -23,6 +24,8 @@ LIMIT=${LIMIT:-0}
 BENCHES=${BENCHES:-gsm8k,mmlu}
 RUN=${RUN:-e16-$(date -u +%Y%m%dT%H%M)}
 DATA=/mnt/data/datasets
+QEXTRA=${QEXTRA:-"{}"}
+SKIP_CORRECT=${SKIP_CORRECT:-0}
 QUALITY_TIMEOUT=${QUALITY_TIMEOUT:-14400}   # seconds per attempt of one model's quality run
 BIND=$(lscpu -p=CPU,CORE | grep -v '^#' | sort -t, -k2,2n -u | cut -d, -f1 | paste -sd,)
 mkdir -p "$R" "$RS" /mnt/data/vllm-cache "$DATA"
@@ -39,7 +42,7 @@ missing_benches() {  # tag -> comma list of BENCHES without a summary line for t
 }
 kill_containers() { docker ps -aq 2>/dev/null | xargs -r docker rm -f >/dev/null 2>&1; }
 
-log "chain start run=$RUN host=$(hostname) LIMIT=$LIMIT BENCHES=$BENCHES KV_GB=$KV_GB MAX_SEQS=$MAX_SEQS"
+log "chain start run=$RUN host=$(hostname) LIMIT=$LIMIT BENCHES=$BENCHES KV_GB=$KV_GB MAX_SEQS=$MAX_SEQS QEXTRA=$QEXTRA SKIP_CORRECT=$SKIP_CORRECT"
 export RUN
 while [ ! -f /var/lib/azslm/setup-done ]; do sleep 10; done
 
@@ -80,7 +83,7 @@ quality_attempt() {  # tag repo benchmarks [extra args]
     -v /mnt/data:/mnt/data -v "$B":/bench:ro -v /mnt/data/vllm-cache:/root/.cache/vllm \
     -e VLLM_CPU_KVCACHE_SPACE="$KV_GB" -e VLLM_CPU_OMP_THREADS_BIND="$BIND" -e RUN="$RUN" \
     --entrypoint python3 "$IMAGE" /bench/quality_tasks.py "/mnt/data/models/$repo" --tag "$tag" \
-    --benchmarks "$todo" --limit "$LIMIT" --out-tasks "$R/quality-tasks.jsonl" --out-summary "$R/quality-summary.jsonl" --max-num-seqs "$MAX_SEQS" --show 3 "$@" 2>&1 \
+    --benchmarks "$todo" --limit "$LIMIT" --out-tasks "$R/quality-tasks.jsonl" --out-summary "$R/quality-summary.jsonl" --max-num-seqs "$MAX_SEQS" --extra "$QEXTRA" --show 3 "$@" 2>&1 \
     | tr '\r' '\n' | grep -vE '^\s*$' >> "$R/quality-run-$tag.log"
   local rc=${PIPESTATUS[0]}
   kill_containers
@@ -95,7 +98,8 @@ for entry in $MODELS; do
   log "== model $tag ($repo) start"
 
   # 3a. correctness check (3 prompts), once retried
-  for attempt in 1 2; do
+  c_ok=skipped
+  [ "$SKIP_CORRECT" = 1 ] || for attempt in 1 2; do
     MODEL="$repo" TAG="$tag" IMAGE="$IMAGE" KV_GB="$KV_GB" bash "$B/vllm_correct.sh" > "$R/vllm-correct-$tag.out" 2>&1 \
       && grep -q '"prompt_id": 3' "$RS/vllm-correct-$tag.log" && { c_ok=1; break; }
     c_ok=0; kill_containers; log "correctness $tag attempt $attempt FAILED: $(grep -iE 'error|Traceback' "$RS/vllm-correct-$tag.log" | tail -n 2 | tr '\n' ' ' | cut -c1-300)"
