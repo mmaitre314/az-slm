@@ -1,0 +1,29 @@
+date 2026-10-04T12:32:34Z  host b2-v6  profile e18  steps: meta ref setup correct w8a8_n16 w8a8_n64 w4a16_mixed_n64 final
+vmSize Standard_E16ds_v6 location westus2
+CPU(s): 16
+Model name: INTEL(R) XEON(R) PLATINUM 8573C
+BIOS Model name: INTEL(R) XEON(R) PLATINUM 8573C None CPU @ 2.3GHz
+Thread(s) per core: 2
+Core(s) per socket: 8
+CPU(s) scaling MHz: 111%
+CPU max MHz: 2300.0000
+CPU min MHz: 800.0000
+amx flags: amx_bf16 amx_int8 amx_tile
+kernel 6.17.0-1022-azure  PRETTY_NAME="Ubuntu 24.04.4 LTS"
+llama.cpp dd266785c2595775001c1c714bd9d92b3ef34cde 2026-10-04T14:10:43+02:00
+bind8=0,2,4,6,8,10,12,14 bind16=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 image=vllm/vllm-openai-cpu:latest-x86_64
+--- top (before any measurement)
+top - 12:32:35 up 9 min,  0 user,  load average: 0.01, 0.76, 0.66
+Tasks: 244 total,   1 running, 242 sleeping,   0 stopped,   1 zombie
+%Cpu(s):  0.0 us,  0.0 sy,  0.0 ni, 99.0 id,  1.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+MiB Mem : 128808.6 total, 126132.9 free,   1692.4 used,   2088.3 buff/cache     
+MiB Swap:      0.0 total,      0.0 free,      0.0 used. 127116.2 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+      1 root      20   0   22776  14260   9780 S   0.0   0.0   0:06.76 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.00 kthreadd
+      3 root      20   0       0      0      0 S   0.0   0.0   0:00.00 pool_wo+
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      7 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
