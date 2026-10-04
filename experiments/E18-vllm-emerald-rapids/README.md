@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| Status | planned |
+| Status | running: background job `chain` on `b2-v6` (`PROFILE=e18`), started 2026-10-04 12:32 UTC; expected ~1.3 h |
 | VM | `b2-v6` (Standard_E16ds_v6, westus2, Regular): Xeon Platinum 8573C, 8 cores / 16 threads, 128 GiB |
 | Stack | same vLLM image as E17 (record the digest; it must match E17's) |
 | Model | `Avesed/Qwen3.8-27B-INT8-W8A8`, `Avesed/Qwen3.8-27B-INT4-W4A16`; Q4_K_M GGUF for the reference run |
-| Dates | |
+| Dates | chain started 2026-10-04 12:32 UTC; finished: – |
 | Raw data | `raw/` |
 
 ## Question
@@ -26,10 +26,17 @@ _Written before the results were known._
   (9–25%, E08) unless it exceeds ~20%. The llama.cpp reference run is used to tell instance
   effects from CPU-generation effects.
 
+## Setup
+
+- Same chain, image, model revisions, KV sizes (16 GiB at 16 prompts, 24 GiB at 64) and run labels as
+  [E17](../E17-vllm-scaling-mtp/README.md#setup); background job `chain` on `b2-v6`, progress in
+  `/mnt/data/results/chain.log`. All runs are `t8` (8 OpenMP threads, one per physical core). The VM
+  was deployed in westus2 and is a Xeon Platinum 8573C (Emerald Rapids), 2.3 GHz base.
+
 ## Method
 
-Self-contained chain `bench/e18_chain.sh` (a subset of E17's, same scripts and settings), saving
-after every step:
+Self-contained chain `bench/vllm_chain.sh` with `PROFILE=e18` (a subset of E17's steps, same scripts and
+settings), saving after every step:
 
 0. Reference: `llama-bench` Q4_K_M pp512/tg128, 8 threads (E13 measured this on another v6 instance).
 1. `bench/vllm_setup.sh` and the correctness check.

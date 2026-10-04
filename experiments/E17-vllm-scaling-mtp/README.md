@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| Status | planned |
+| Status | running: background job `chain` on `b2-vllm` (`PROFILE=e17`), started 2026-10-04 12:49 UTC; expected ~3 h |
 | VM | `b2-vllm` (Standard_E16ds_v7, eastus2, Regular): Xeon 6 6973P-C, 8 cores / 16 threads, 128 GiB |
 | Stack | vLLM CPU Docker image `vllm/vllm-openai-cpu:latest-x86_64` (record vLLM version and image digest); llama.cpp from cloud-init for the reference run |
 | Model | `Avesed/Qwen3.8-27B-INT8-W8A8`, `Avesed/Qwen3.8-27B-INT4-W4A16` (record revisions); `bartowski/Qwen3.8-27B-GGUF` Q4_K_M for the reference run |
-| Dates | |
+| Dates | chain started 2026-10-04 12:49 UTC (smoke test 12:32-12:47 UTC); finished: – |
 | Raw data | `raw/` (harvested with `deploy.py harvest`) |
 
 ## Question
@@ -33,10 +33,34 @@ _Written before the results were known._
   Risks: the CPU backend or the hybrid model may not support MTP; the W8A8 checkpoint may lack
   the MTP weights.
 
+## Setup
+
+- Chain: `bench/vllm_chain.sh`, run as background job `chain` (a transient systemd unit) with no agent in
+  the loop. A failing step is logged and the chain goes on; a model whose 3-prompt correctness check
+  fails twice is not benchmarked. Progress log: `/mnt/data/results/chain.log` (copied to the OS disk
+  after every step). One `vllm_bench.sh` call per workload (own 2 h timeout, own save). Each run is a
+  fresh container, so the model is loaded again every time; torch.compile artefacts are cached in
+  `/mnt/data/vllm-cache`.
+- Image `vllm/vllm-openai-cpu:latest-x86_64` = vLLM 0.31.0, torch 2.13.0+cpu, digest
+  `sha256:8024248339dc6878daa5349344ed29d49c8a6732f6bdf7400fda32ce33e4b30b` (same as E09's tag; the
+  digest was not recorded there). Model revisions: W8A8 `86b8427a5e621c18f203bbce795dd83122496412`,
+  W4A16 `135ecac28b03e7f3e0d3458df40eea8dc10dc973`.
+- Only the two quantized repos are downloaded (no BF16). KV cache (`VLLM_CPU_KVCACHE_SPACE`) 16 GiB for
+  16 and 32 prompts, 24 GiB for 64 prompts; `--max-model-len 2048`; random prompts, all requests
+  submitted at once (`vllm bench throughput`, as in E09). Runs are labelled in `vllm.jsonl` by `run`:
+  `t8` (8 OpenMP threads, one per physical core), `t16` (all 16 logical CPUs), `mtp1`, `mtp2`
+  (`num_speculative_tokens`).
+- MTP: `--speculative-config {"method":"mtp","num_speculative_tokens":N}` goes through `EXTRA` and
+  `vllm_bench.sh` expands it unquoted, so the JSON has no spaces and no wrapping quotes. The chain
+  scans the safetensors headers for `mtp` tensors first (`mtp-check.jsonl`) and skips the MTP steps if
+  there are none, or if the first MTP step fails on every run.
+- Smoke test before the real chain: `PROFILE=smoke` (setup, MTP check, one correctness run, a 4-prompt
+  mixed 128/16 W8A8 run and a 4-prompt MTP run), results moved to `/mnt/data/results-smoke` on the VM.
+
 ## Method
 
-One self-contained background chain, `bench/e17_chain.sh`, that calls `bench/save_results.sh`
-after every step:
+One self-contained background chain, `bench/vllm_chain.sh` (`PROFILE=e17`, the default), that calls
+`bench/save_results.sh` after every step (and after every single `vllm bench throughput` run):
 
 0. **Reference**: `llama-bench` Q4_K_M pp512/tg128, 8 threads, AMX build (comparable with E03/E13
    to place this VM instance relative to earlier ones).
