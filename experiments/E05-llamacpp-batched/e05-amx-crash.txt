@@ -61,3 +61,7 @@ done 05:01:56
 0000000000064810 <_ZN12_GLOBAL__N_120tinygemm_kernel_vnniI10block_q8_0S1_fLi1ELi64ELi32EE5applyEiPKvS4_Pfi+0x80>:
    64810:	vpaddb %zmm1,%zmm15,%zmm15
    64816:	vpdpbusd (%rax),%zmm15,%zmm0
+## instruction counts printed by bench/build_native_noamx.sh (objdump of libggml-cpu.so, from the e05 job log)
+build: 203 AMX instructions, 2269 VNNI instructions
+build-noamx: 0 AMX instructions, 1189 VNNI instructions
+build-native-noamx: 0 AMX instructions, 1189 VNNI instructions

@@ -18,7 +18,7 @@ KV_GB=${KV_GB:-16}
 BIND=${BIND:-$(lscpu -p=CPU,CORE | grep -v '^#' | sort -t, -k2,2n -u | cut -d, -f1 | paste -sd,)}
 RUN=${RUN:-t$(echo "$BIND" | tr ',' '\n' | wc -l)}
 OUT=/mnt/data/results
-mkdir -p "$OUT"
+mkdir -p "$OUT" /mnt/data/vllm-cache
 # name input_len output_len
 WORKLOADS=${WORKLOADS:-"prefill 512 1
 decode 32 256
@@ -32,7 +32,7 @@ for model in $MODELS; do
       { echo "== $tag $(date -u +%T)"; top -bn1 -o %CPU | sed -n 1,12p; } >> "$OUT/vllm-top.log"
       ( peak=0; while sleep 5; do r=$(ps -eo rss= --sort=-rss | head -n 1 | tr -d ' '); [ "${r:-0}" -gt "$peak" ] && peak=$r && echo "$peak" > "$OUT/.rss-$tag"; done ) &
       sampler=$!
-      docker run --rm --privileged --shm-size 8g -v /mnt/data:/mnt/data \
+      docker run --rm --privileged --shm-size 8g -v /mnt/data:/mnt/data -v /mnt/data/vllm-cache:/root/.cache/vllm \
         -e VLLM_CPU_KVCACHE_SPACE="$KV_GB" -e VLLM_CPU_OMP_THREADS_BIND="$BIND" \
         --entrypoint vllm "$IMAGE" bench throughput --model "/mnt/data/models/$model" \
         --dataset-name random --random-input-len "$in_len" --random-output-len "$out_len" \

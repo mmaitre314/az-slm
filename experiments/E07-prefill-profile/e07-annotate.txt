@@ -1,0 +1,57 @@
+# Output of annotate_classes.py and annotate_prev.py on bench-lc2 (run 2026-10-04 ~07:45 UTC, `nice -n 19`, against the
+# perf-Q4_0-build*.data files recorded at 03:30 UTC). Invocation:
+#   python3 annotate_classes.py <perf.data> <libggml-cpu.so> '<symbol regex>'
+# 1) AMX build (/opt/llama.cpp/build), symbol regex '^_ZZ?ZL?.*ggml_backend_amx_mul_mat|ggml_backend_amx_mul_mat' (equivalent to 'ggml_backend_amx_mul_mat')
+total samples 154141, in symbol 120287 (78.0%)  sym=_ZZZ24ggml_backend_amx_mul_matPK19ggml_compute_paramsP11ggml_tensorENKUliiE1_clEiiENKUlvE_
+symbol start 0x7a680 size 30641 bytes
+class                              samples%  static-instr
+AMX tile load/store/zero               75.3   69
+AVX-512 (zmm) other                    14.2   1453
+scalar/other                           10.4   3040
+AMX tile multiply (tdpb*)               0.1   24
+branch/compare                          0.0   435
+AVX (xmm/other v*)                      0.0   82
+AVX2 (ymm)                              0.0   158
+top mnemonics by samples%: tilezero 75.3, vmovups 7.9, mov 7.1, movzwl 2.7, vfmadd213ps 2.5, vmulps 1.5, vpsrlw 1.2, vcvtdq2ps 0.5
+# 2) clean control (/opt/llama.cpp/build-native-noamx), symbol regex 'gemm_q4_b32_8x8_q8_0_lut_avx'
+total samples 201769, in symbol 158698 (78.7%)  sym=_Z28gemm_q4_b32_8x8_q8_0_lut_avxI5blockILi4ELi8EEEviPfmPKvS4_iiDv4_x
+symbol start 0x129200 size 11801 bytes
+class                              samples%  static-instr
+AVX-512 (zmm) other                    78.3   528
+AVX-512 (zmm) VNNI vpdpbusd            10.5   64
+AVX2 (ymm)                              8.4   654
+AVX (xmm/other v*)                      2.0   41
+scalar/other                            0.6   628
+branch/compare                          0.2   78
+top mnemonics by samples%: vmovdqa64 27.3, vpabsb 15.9, vpdpbusd 10.5, vpsubb 7.6, vfmadd213ps 6.0, vmovdqa32 5.5, vpshufd 5.1, vperm2i128 4.8
+# 3) AMX build, annotate_prev.py (instruction that executed just before each sampled IP)
+previous-instruction mnemonic of sampled IP, % of symbol samples: tileloadd 69.4, vfmadd213ps 8.3, tilestored 8.0, vmulps 3.3, vcvtdq2ps 2.2, vmovups 1.9
+  +0x4e14 34.6%  prev: tileloadd (%rax,%r11,1),%tmm0 | at: tilezero %tmm4
+  +0x5541 33.1%  prev: tileloadd (%rax,%r11,1),%tmm1 | at: tilezero %tmm6
+  +0x5859 3.5%  prev: tilestored %tmm6,(%rax,%r11,1) | at: tilezero %tmm7
+  +0x513c 3.4%  prev: tilestored %tmm4,(%rdx,%r11,1) | at: tilezero %tmm5
+hot offsets (samples % of symbol):
+  +0x4e14  34.6%  tilezero
+  +0x5541  33.1%  tilezero
+  +0x5859   3.5%  tilezero
+  +0x513c   3.4%  tilezero
+  +0x52cb   1.1%  vmovups
+  +0x584b   0.7%  mov
+tile instructions in symbol: Counter({'tdpbssd': 24, 'tilestored': 24, 'tileloadd': 23, 'tilezero': 22})
+# 4) disassembly just before the hottest sample (+0x4e14), from an earlier run of the same script (annot2): AVX-512 stores of
+#    the unpacked int8 weights (vpsrlw/vpandd/vpaddb, vmovdqa64 to a scratch buffer), then tileloadd, then the sampled tilezero
+    0.2%  +0x4da2  vpsrlw $0x4,0xa0(%rbx),%zmm4
+    0.0%  +0x4dad  vpaddb %zmm3,%zmm1,%zmm3
+    0.0%  +0x4db3  vmovdqa64 %zmm3,0x10500(%r9)
+    0.0%  +0x4dbd  vpandd %zmm4,%zmm2,%zmm3
+    0.0%  +0x4dc3  vpaddb %zmm3,%zmm1,%zmm3
+    0.0%  +0x4dc9  vmovdqa64 %zmm3,0x10540(%r9)
+    0.0%  +0x4dd3  vpandd 0xe0(%rbx),%zmm2,%zmm3
+    0.2%  +0x4ddd  vpsrlw $0x4,0xe0(%rbx),%zmm4
+    0.0%  +0x4de8  vpaddb %zmm3,%zmm1,%zmm3
+    0.0%  +0x4dee  vmovdqa64 %zmm3,0x10580(%r9)
+    0.0%  +0x4df8  vpandd %zmm4,%zmm2,%zmm3
+    0.0%  +0x4dfe  vpaddb %zmm3,%zmm1,%zmm3
+    0.0%  +0x4e04  vmovdqa64 %zmm3,0x105c0(%r9)
+    0.0%  +0x4e0e  tileloadd (%rax,%r11,1),%tmm0
+   34.6%  +0x4e14  tilezero %tmm4

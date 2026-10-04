@@ -1,0 +1,6 @@
+{"quant": "Q4_0", "ppl_q": 6.750269, "ppl_base": 6.610353, "ln_ppl_ratio": 0.020945, "kld_mean": 0.025221, "kld_p99": 0.211996, "same_top_p": 92.059}
+{"quant": "IQ4_XS", "ppl_q": 6.694317, "ppl_base": 6.610353, "ln_ppl_ratio": 0.012622, "kld_mean": 0.01874, "kld_p99": 0.210364, "same_top_p": 92.843}
+{"quant": "Q4_K_M", "ppl_q": 6.612731, "ppl_base": 6.610353, "ln_ppl_ratio": 0.00036, "kld_mean": 0.013479, "kld_p99": 0.137102, "same_top_p": 93.627}
+{"quant": "Q5_K_M", "ppl_q": 6.647883, "ppl_base": 6.610353, "ln_ppl_ratio": 0.005661, "kld_mean": 0.004937, "kld_p99": 0.047007, "same_top_p": 95.637}
+{"quant": "Q6_K", "ppl_q": 6.62556, "ppl_base": 6.610353, "ln_ppl_ratio": 0.002298, "kld_mean": 0.002674, "kld_p99": 0.021491, "same_top_p": 95.833}
+{"quant": "Q8_0", "ppl_q": 6.612136, "ppl_base": 6.610353, "ln_ppl_ratio": 0.00027, "kld_mean": 0.000636, "kld_p99": 0.005711, "same_top_p": 98.137}

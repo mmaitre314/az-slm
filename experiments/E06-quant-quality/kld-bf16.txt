@@ -1,0 +1,4 @@
+# bf16 base-logit run
+0.16.679.372 I perplexity: calculating perplexity over 8 chunks, n_ctx=512, batch_size=2048, n_seq=4
+2.20.916.799 I perplexity: 124.15 seconds per pass - ETA 4.13 minutes
+4.25.364.733 I Final estimate: PPL = 6.6159 +/- 0.35997

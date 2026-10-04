@@ -1,0 +1,71 @@
+== llama-bench-IQ4_XS-build-native-noamx-t8
+CPU  output buffer size =     0.95 MiB
+CPU KV buffer size =    16.00 MiB
+CPU KV buffer size =    32.00 MiB
+CPU RS buffer size =   149.62 MiB
+CPU compute buffer size =   128.82 MiB
+CPU compute buffer size =   515.52 MiB
+CPU_Mapped model buffer size = 14520.62 MiB
+CPU_REPACK model buffer size =   101.25 MiB
+== llama-bench-IQ4_XS-build-t8
+AMX model buffer size = 13980.10 MiB
+CPU  output buffer size =     0.95 MiB
+CPU KV buffer size =    16.00 MiB
+CPU KV buffer size =    32.00 MiB
+CPU RS buffer size =   149.62 MiB
+CPU compute buffer size =   128.82 MiB
+CPU compute buffer size =   515.52 MiB
+CPU_Mapped model buffer size = 13525.99 MiB
+== llama-bench-Q4_0-build-native-noamx-t8
+CPU  output buffer size =     0.95 MiB
+CPU KV buffer size =    16.00 MiB
+CPU KV buffer size =    32.00 MiB
+CPU RS buffer size =   149.62 MiB
+CPU compute buffer size =   128.82 MiB
+CPU compute buffer size =   515.52 MiB
+CPU_Mapped model buffer size = 15353.00 MiB
+CPU_REPACK model buffer size = 11992.50 MiB
+== llama-bench-Q4_0-build-t8
+AMX model buffer size = 14660.88 MiB
+CPU  output buffer size =     0.95 MiB
+CPU KV buffer size =    16.00 MiB
+CPU KV buffer size =    32.00 MiB
+CPU RS buffer size =   149.62 MiB
+CPU compute buffer size =   128.82 MiB
+CPU compute buffer size =   515.52 MiB
+CPU_Mapped model buffer size = 14358.37 MiB
+== llama-bench-Q4_K_M-build-native-noamx-t8
+CPU  output buffer size =     0.95 MiB
+CPU KV buffer size =    16.00 MiB
+CPU KV buffer size =    32.00 MiB
+CPU RS buffer size =   149.62 MiB
+CPU compute buffer size =   128.82 MiB
+CPU compute buffer size =   515.52 MiB
+CPU_Mapped model buffer size = 16395.97 MiB
+CPU_REPACK model buffer size = 10237.50 MiB
+== llama-bench-Q4_K_M-build-t8
+AMX model buffer size = 16057.13 MiB
+CPU  output buffer size =     0.95 MiB
+CPU KV buffer size =    16.00 MiB
+CPU KV buffer size =    32.00 MiB
+CPU RS buffer size =   149.62 MiB
+CPU compute buffer size =   128.82 MiB
+CPU compute buffer size =   515.52 MiB
+CPU_Mapped model buffer size = 15401.34 MiB
+== llama-bench-Q8_0-build-native-noamx-t8
+CPU  output buffer size =     0.95 MiB
+CPU KV buffer size =    16.00 MiB
+CPU KV buffer size =    32.00 MiB
+CPU RS buffer size =   149.62 MiB
+CPU compute buffer size =   128.82 MiB
+CPU compute buffer size =   515.52 MiB
+CPU_Mapped model buffer size = 27326.65 MiB
+== llama-bench-Q8_0-build-t8
+AMX model buffer size = 28989.84 MiB
+CPU  output buffer size =     0.95 MiB
+CPU KV buffer size =    16.00 MiB
+CPU KV buffer size =    32.00 MiB
+CPU RS buffer size =   149.62 MiB
+CPU compute buffer size =   128.82 MiB
+CPU compute buffer size =   515.52 MiB
+CPU_Mapped model buffer size = 26038.37 MiB

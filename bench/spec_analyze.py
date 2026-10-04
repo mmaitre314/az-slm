@@ -39,7 +39,8 @@ def main():
     for (tag, st), rs in by.items():
         if tag.startswith(args.base):
             base_texts[st] = {r["i"]: r["text"] for r in rs if r.get("kind") != "summary"}
-    hdr = ["tag", "set", "n_in", "tokens", "dec t/s", "accept", "same/total", "first diffs (req:char)"]
+    hdr = ["tag", "set", "n_in", "tokens", "dec t/s", "accept", "tok/step", "s/step", "same/total",
+           "first diffs (req:char)"]
     out = []
     for (tag, st), rs in by.items():
         summ = [r for r in rs if r.get("kind") == "summary"]
@@ -57,9 +58,14 @@ def main():
                 else:
                     diffs.append(f"{r['i']}:{d}")
         acc = s.get("accept_rate")
+        # one verification step always yields 1 token plus the accepted drafts (single sequence only)
+        dec_s = sum((r.get("predicted_ms") or 0) for r in reqs) / 1000
+        steps = s["tokens"] - (s.get("draft_n_accepted") or 0)
+        tps = f"{s['tokens'] / steps:.2f}" if s["n_inflight"] == 1 and steps > 0 else "-"
+        sps = f"{dec_s / steps:.3f}" if s["n_inflight"] == 1 and steps > 0 else "-"
         out.append([tag, st, s["n_inflight"], s["tokens"], s["mean_decode_tps"] if s["n_inflight"] == 1 else
                     f"{s['sum_slot_tps']}/{s['agg_wall_tps']}", "-" if acc is None else f"{acc:.2f}",
-                    f"{same}/{len(reqs)}", " ".join(diffs)])
+                    tps, sps, f"{same}/{len(reqs)}", " ".join(diffs)])
     if args.md:
         print("| " + " | ".join(hdr) + " |")
         print("|" + "---|" * len(hdr))

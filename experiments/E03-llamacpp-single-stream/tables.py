@@ -65,7 +65,7 @@ def main():
             r.append(f"{v(q, b, 'tg')[0] * sz / 1e9:.0f}")
         for b in ("build", "build-noamx"):
             r.append(f"{v(q, b, 'pp')[0] * gf / 1e3:.2f}")
-        r.append(f"{v(q, 'build', 'pp')[0] * gf / 1e3 / AMX_INT8_TOPS * 100:.1f}%")
+        r.append("n/a (no AMX path)" if q == "bf16" else f"{v(q, 'build', 'pp')[0] * gf / 1e3 / AMX_INT8_TOPS * 100:.1f}%")
         rows.append(r)
     print(table(["quant", "GFLOP/token", "decode GB/s AMX (tg x file size)", "decode GB/s no-AMX",
                  "prefill TFLOPS AMX", "prefill TFLOPS no-AMX", "AMX build, % of 59 TOPS INT8 peak"], rows))

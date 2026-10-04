@@ -1,0 +1,64 @@
+# E07 / E08 extracts from lc2.log
+268:build: 203 AMX instructions in libggml-cpu.so
+273:build-noamx: 0 AMX instructions in libggml-cpu.so
+519:build: 203 AMX instructions, 2269 VNNI instructions
+527:build-noamx: 0 AMX instructions, 1189 VNNI instructions
+535:build-native-noamx: 0 AMX instructions, 1189 VNNI instructions
+### E07 profile
+{"n_prompt":512,"avg_ts":25.258409}
+== top functions (Q4_0, build): % of samples
+grep: write error: Broken pipe
+    78.04%  libggml-cpu.so.0.25.3     [.] ggml_backend_amx_mul_mat(ggml_compute_params const*, ggml_tensor*)::{lambda(int, int)#3}::operator()(int, int) const::
+     2.52%  libggml-cpu.so.0.25.3     [.] void (anonymous namespace)::tinygemm_kernel_amx<block_q8_1, block_q4_1, float, 32, 0>(int, int, int, void const*, void
+     2.42%  libggml-cpu.so.0.25.3     [.] void (anonymous namespace)::tinygemm_kernel_amx<block_q8_0, block_q8_0, float, 32, 0>(int, int, int, void const*, void
+     2.25%  libgomp.so.1.0.0          [.] 0x00000000000258a2                                                                                                    
+     2.16%  libggml-cpu.so.0.25.3     [.] ggml_compute_forward_gated_delta_net                                                                                  
+     1.35%  libggml-cpu.so.0.25.3     [.] ggml_compute_forward_concat                                                                                           
+     1.34%  [kernel.kallsyms]         [k] clear_page_erms                                                                                                       
+     1.22%  libggml-cpu.so.0.25.3     [.] void (anonymous namespace)::pack_qs<block_q4_0>(void*, block_q4_0 const*, int)                                        
+     1.18%  libggml-cpu.so.0.25.3     [.] (anonymous namespace)::tinygemm_kernel_amx<block_q8_K, block_q6_K, float, 256, 0>(int, int, int, void const*, void con
+     1.13%  libggml-cpu.so.0.25.3     [.] ggml_vec_dot_f32                                                                                                      
+     0.96%  libggml-cpu.so.0.25.3     [.] ggml_compute_forward_ssm_conv                                                                                         
+     0.67%  libggml-cpu.so.0.25.3     [.] void (anonymous namespace)::unpack_B<block_q6_K>(signed char*, void const*, int)                                      
+     0.66%  libggml-cpu.so.0.25.3     [.] ggml_compute_forward_flash_attn_ext_tiled(ggml_compute_params const*, ggml_tensor*, int, int)                         
+     0.54%  libggml-cpu.so.0.25.3     [.] ggml_compute_forward_rms_norm_mul_fused                                                                               
+     0.38%  libggml-cpu.so.0.25.3     [.] quantize_row_q8_0                                                                                                     
+     0.33%  libggml-cpu.so.0.25.3     [.] ggml_vec_swiglu_f32                                                                                                   
+     0.32%  libgomp.so.1.0.0          [.] 0x00000000000258a6                                                                                                    
+     0.25%  ld-linux-x86-64.so.2      [.] __tls_get_addr                                                                                                        
+     0.23%  libggml-cpu.so.0.25.3     [.] void (anonymous namespace)::tinyBLAS<16, float __vector(16), float __vector(16), float, float, float>::gemm_bloc<4, 6>
+     0.20%  libgomp.so.1.0.0          [.] 0x00000000000258af                                                                                                    
+     0.15%  libggml-cpu.so.0.25.3     [.] (anonymous namespace)::tinygemm_kernel_amx<block_q8_K, block_q6_K, float, 256, 0>(int, int, int, void const*, void con
+     0.11%  libggml-cpu.so.0.25.3     [.] ggml_compute_forward_rms_norm                                                                                         
+     0.11%  libggml-cpu.so.0.25.3     [.] void (anonymous namespace)::pack_qs<block_q6_K>(void*, block_q6_K const*, int)                                        
+     0.10%  libggml-cpu.so.0.25.3     [.] __tls_get_addr@plt                                                                                                    
+     0.10%  libggml-cpu.so.0.25.3     [.] ggml_vec_silu_f32                                                                                                     
+{"n_prompt":512,"avg_ts":19.150248}
+== top functions (Q4_0, build-native-noamx): % of samples
+grep: write error: Broken pipe
+    78.65%  libggml-cpu.so.0.25.3   [.] void gemm_q4_b32_8x8_q8_0_lut_avx<block_iq4_nlx8>(int, float*, unsigned long, void const*, void const*, int, int, long l
+     7.99%  libggml-cpu.so.0.25.3   [.] ggml_vec_dot_q4_1_q8_1                                                                                                  
+     3.47%  libggml-cpu.so.0.25.3   [.] void (anonymous namespace)::tinyBLAS_Q0_AVX<block_q8_0, block_q8_0, float>::gemm4xN<4>(long, long, long, long)          
+     1.66%  libggml-cpu.so.0.25.3   [.] ggml_compute_forward_gated_delta_net                                                                                    
+     1.20%  libgomp.so.1.0.0        [.] 0x00000000000258a2                                                                                                      
+     1.04%  libggml-cpu.so.0.25.3   [.] ggml_compute_forward_concat                                                                                             
+     0.87%  libggml-cpu.so.0.25.3   [.] ggml_vec_dot_f32                                                                                                        
+     0.68%  libggml-cpu.so.0.25.3   [.] ggml_compute_forward_ssm_conv                                                                                           
+     0.66%  libggml-cpu.so.0.25.3   [.] void tiled_run_micro_vnni_8x16<16, false, 32, 1>(tiled_tile_src0 const&, tiled_tile_src1 const&, int, int, int, int, flo
+     0.54%  libggml-cpu.so.0.25.3   [.] repack_q4_0_to_q4_0_8_bl(ggml_tensor*, int, void const*, unsigned long) [clone .constprop.0]                            
+     0.50%  libggml-cpu.so.0.25.3   [.] ggml_compute_forward_flash_attn_ext_tiled(ggml_compute_params const*, ggml_tensor*, int, int)                           
+     0.36%  libggml-cpu.so.0.25.3   [.] ggml_compute_forward_rms_norm_mul_fused                                                                                 
+     0.32%  [kernel.kallsyms]       [k] clear_page_erms                                                                                                         
+     0.23%  libggml-cpu.so.0.25.3   [.] ggml_vec_swiglu_f32                                                                                                     
+     0.20%  libggml-cpu.so.0.25.3   [.] ggml_quantize_mat_q8_0_4x8                                                                                              
+     0.18%  libggml-cpu.so.0.25.3   [.] void (anonymous namespace)::tinyBLAS<16, float __vector(16), float __vector(16), float, float, float>::gemm_bloc<4, 6>(l
+     0.17%  libgomp.so.1.0.0        [.] 0x00000000000258a6                                                                                                      
+     0.12%  libgomp.so.1.0.0        [.] 0x00000000000258af                                                                                                      
+     0.10%  libggml-cpu.so.0.25.3   [.] tiled_unpack_src0(block_q6_K const*, long, int, tiled_tile_src0*, int) [clone .part.0] [clone .constprop.0]             
+     0.09%  libggml-cpu.so.0.25.3   [.] ggml_vec_silu_f32                                                                                                       
+     0.07%  libggml-cpu.so.0.25.3   [.] ggml_compute_forward_add_non_quantized                                                                                  
+     0.07%  libggml-cpu.so.0.25.3   [.] ggml_compute_forward_rms_norm                                                                                           
+     0.07%  libggml-cpu.so.0.25.3   [.] ggml_vec_dot_q6_K_q8_K                                                                                                  
+     0.05%  libggml-cpu.so.0.25.3   [.] ggml_vec_dot_f32@plt                                                                                                    
+     0.05%  libggml-cpu.so.0.25.3   [.] tiled_store_window(float const*, int, int, int, float*, unsigned long) [clone .constprop.0]                             
+### E06 quality

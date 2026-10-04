@@ -33,7 +33,7 @@ def main():
     rows = [json.loads(l) for l in (HERE / "llama-batched.jsonl").read_text().splitlines()]
     base = {(r["quant"], r["build"]): r["speed_tg"] for r in rows if r["pl"] == 1}
 
-    for build, title in (("build-native-noamx", "valid output: native build with AMX compiled out"),
+    for build, title in (("build-native-noamx", "clean control, native build with AMX compiled out (output presumed valid, see threats)"),
                          ("build", "AMX build: speed reference only (output corrupt for > 1 sequence, E04)")):
         print(f"\n### Throughput, {title}\n")
         out = []
@@ -64,6 +64,15 @@ def main():
     print(table(["quant", "build", "sequences", "input USD/M on-demand", "output USD/M on-demand", "input USD/M Spot",
                  "output USD/M Spot", "blended 128+128 measured USD/M on-demand", "blended 128+128 USD/M Spot",
                  "blended 512+128 USD/M on-demand", "blended 512+128 USD/M Spot"], out, left=3))
+
+    print("\n### AMX build over the clean control (same quant, same number of sequences; speed only)\n")
+    d = {(r["quant"], r["build"], r["pl"]): r for r in rows}
+    out = []
+    for (q, b, n), r in d.items():
+        c = d.get((q, "build-native-noamx", n))
+        if b == "build" and c:
+            out.append([q, n, f"{r['speed_pp'] / c['speed_pp']:.2f}x", f"{r['speed_tg'] / c['speed_tg']:.2f}x"])
+    print(table(["quant", "sequences", "prefill AMX / no-AMX", "decode AMX / no-AMX"], out))
 
 
 if __name__ == "__main__":

@@ -43,9 +43,9 @@ input and output tokens per stack, quantization and VM, with the quality cost of
 | --- | --- | --- | --- | --- |
 | [E01](E01-region-price-survey/) | AMX VM families, Spot prices and regions | – | orchestrator | done |
 | [E02](E02-amx-enablement/) | Is AMX usable inside an Azure VM? | bench-e16v7 | orchestrator | done |
-| [E03](E03-llamacpp-single-stream/) | llama.cpp single-sequence prefill/decode per quant, AMX vs no-AMX | bench-e16v7 | runner | done, report pending |
+| [E03](E03-llamacpp-single-stream/) | llama.cpp single-sequence prefill/decode per quant, AMX vs no-AMX | bench-e16v7 | runner | done |
 | [E04](E04-llamacpp-amx-multiseq-bug/) | llama.cpp AMX output corruption with several sequences | bench-e16v7 | orchestrator | done (finding) |
-| [E05](E05-llamacpp-batched/) | llama.cpp batch throughput, 1–32 sequences | bench-e16v7 | runner | done, report pending |
+| [E05](E05-llamacpp-batched/) | llama.cpp batch throughput, 1–32 sequences | bench-e16v7 | runner | done |
 | [E06](E06-quant-quality/) | Quantization quality: KL divergence vs BF16 | bench-lc2 | runner | done, report pending |
 | [E07](E07-prefill-profile/) | Why is prefill slow? CPU profile | bench-lc2 | orchestrator + runner | done, report pending |
 | [E08](E08-threads-smt/) | Threads, SMT and pinning; native no-AMX control build | bench-lc2 | runner | done, report pending |
