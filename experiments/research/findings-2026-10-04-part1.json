@@ -313,9 +313,9 @@
    {
     "claim": "Estimated Ollama cost on E16ds_v7 for the 512+128 workload, computed from our own measurements with Ollama forced to one sequence. Q4_K_M AMX at 8 threads: prefill 28.7 tok/s, decode 3.88 tok/s (E03), so 50.8 s per request = $37.1/M. With the automatic MTP head (E12: 1.55x decode, i.e. 6.0 tok/s): 39.2 s = $28.6/M. Adding num_thread=16 (+14-25% prefill, E08): about $26-27/M. That is 5.7-8.1x vLLM W8A8 ($4.56/M) and 1.1-1.9x llama.cpp batched ($19.3-23.9/M).",
     "sources": [
-     "/home/user/az-slm/experiments/E03-llamacpp-single-stream/README.md",
-     "/home/user/az-slm/experiments/E12-speculative-decoding/README.md",
-     "/home/user/az-slm/experiments/E15-summary/README.md"
+     "experiments/E03-llamacpp-single-stream/README.md",
+     "experiments/E12-speculative-decoding/README.md",
+     "experiments/E15-summary/README.md"
     ],
     "confidence": "medium",
     "relevance": "Answers the bottom-line question: Ollama is at best equal to llama.cpp single-sequence and worse than llama.cpp batched. Medium confidence because whether the library tag carries the MTP head was not verified."
@@ -323,8 +323,8 @@
    {
     "claim": "Workarounds can't beat llama.cpp. Running several Ollama instances (each loading its own 17.4 GB copy) doesn't help: decode is memory-bandwidth-bound at ~100 GB/s, so N copies share about the same ~5 tok/s total, and prefill shares the same cores. Patching out the qwen35 parallel limit just gives llama-server -np N. With Ollama's AMX variant loaded, that would produce wrong multi-sequence output (E04) unless libggml-cpu-sapphirerapids is deleted so a non-AMX variant loads, which is llama.cpp no-AMX batched ($19-24/M) plus Ollama overhead.",
     "sources": [
-     "/home/user/az-slm/AGENTS.md (llama.cpp AMX gotcha)",
-     "/home/user/az-slm/experiments/E05-llamacpp-batched",
+     "AGENTS.md (llama.cpp AMX gotcha)",
+     "experiments/E05-llamacpp-batched",
      "https://github.com/ollama/ollama/blob/42e911bc3d05798cad729cb474bf62f378cb2e26/server/sched.go#L510-L515"
     ],
     "confidence": "high",
@@ -384,8 +384,8 @@
    {
     "claim": "Estimate (mine) of DiffusionGemma vs autoregressive on E16ds_v7. One denoising step over a 256-token canvas costs about 256 x 2 x 3.8e9 = 1.95 TFLOP per sequence. A 128-token answer needs about 7-17 steps, so 14-33 TFLOP, against about 1 TFLOP autoregressive: 14-34x more compute per output token. At the 3.5-7 TFLOPS effective that vLLM CPU sustains (E09 BF16 prefill: 133 tok/s x 54 GFLOP = 7.2 TFLOPS dense), that is 2.6-10.5 s per request including prefill: 61-246 tok/s, or $1.9-7.7/M. Its autoregressive twin at batch 64 reads about 52 GB (BF16, all experts) per step, roughly 0.55 s, so 1.1 s of decode per request plus 0.55-1.1 s prefill: about $1.2-1.6/M (about $2.6/M at batch 16), and less with INT8 weights. The CPU crossover is about 8-16 sequences because effective FLOPs per byte here are around 50, against around 300 on an H100.",
     "sources": [
-     "/home/user/az-slm/experiments/E09-vllm-cpu",
-     "/home/user/az-slm/experiments/E15-summary/README.md",
+     "experiments/E09-vllm-cpu",
+     "experiments/E15-summary/README.md",
      "https://github.com/vllm-project/recipes/blob/cbf76c0/models/Google/diffusiongemma-26B-A4B-it.yaml"
     ],
     "confidence": "low",
@@ -458,15 +458,15 @@
  },
  "Models better suited than dense Qwen3.8-": {
   "topic": "Models better suited than dense Qwen3.8-27B to CPU batch inference on E16ds_v7 (small dense, low-active MoE, hybrid, and diffusion LMs such as DiffusionGemma)",
-  "summary": "The E17 runs that have finished change the picture. Qwen3.8-27B W8A8 at 64 prompts costs $3.47/M blended (134 tok/s), and its decode step fits t(n) \u2248 0.29 s + 13 ms \u00d7 n. At n=64 the per-sequence term (0.83 s) is about 3\u00d7 the weight-read term, and prefill takes about half of each 512/128 request. So the cost is set by ACTIVE-parameter FLOPs, not by weight bandwidth, and the lever is fewer active params. Total params matter only for the 128 GiB limit and a ~0.3 s weight read per step. No Qwen3.8 model sits between the 27B and Flash-Next (176B in all, 6B active, does not fit in 128 GiB, no mainline CPU support). The best candidate is Qwen3.6-35B-A3B: Apache-2.0, April 2026, the same Gated DeltaNet hybrid family and tokenizer, 3B active (~4.8 vs ~54 GFLOP/token), MMLU-Pro 85.2 and GPQA 86.0 vs Qwen3.8-27B's ~84-86 and 89.2, and vLLM lists Xeon 6 BF16 serving for its Qwen3.5 twin. I estimate $0.76-1.11/M at INT8 with 128 prompts and $1.2-1.7/M at BF16, 2-4\u00d7 cheaper than today. The dense control is Qwen3.5-9B (MMLU-Pro 82.5, GPQA 81.7, IFEval 91.5; ~$1.0-1.2/M INT8, ~$1.4-1.8/M BF16). It has the lowest technical risk because it runs exactly the code path already working for the 27B. Gemma 4 26B-A4B costs about the same but scores lower (82.6/82.3), so it is a hedge. Phi-4 is dominated: Dec-2024, MMLU-Pro 70.4, GPQA 56.1, IFEval 63, 16k context, ~$1.7/M because 14B dense, and I found no primary source for a \"Phi-5\". gpt-oss-20b, Nemotron 3 Nano, Granite 4.x, LFM2 and Mistral Small 4 lose on quality, add reasoning tokens, or are too big. DiffusionGemma (Gemma-4-26B-A4B converted to 256-token block diffusion) buys fewer weight loads with ~25\u00d7 more FLOPs per generated token. That helps batch-1 latency on GPUs, but on a FLOP-poor CPU that already batches 64-256 requests I estimate it costs 2-3.5\u00d7 more than autoregressive Gemma 4 ($1.4-3.1/M) and it scores lower (MMLU-Pro 77.6 vs 82.6, GPQA 73.2 vs 82.3), so I don't recommend it beyond an optional sanity check. The quality risk for extraction, classification and summarization is mainly instruction and format adherence in non-thinking mode, because all the published scores are thinking-mode. Gate any switch with the E16 harness plus IFEval and a JSON-extraction set. Bottom line: benchmark Qwen3.6-35B-A3B (P0, BF16 then FP8/INT8) and Qwen3.5-9B (P0 dense control) on vLLM CPU at 64-256 prompts, add Gemma 4 26B-A4B as a P2 hedge, and run DiffusionGemma at most as a P3 curiosity. Note: WebFetch was blocked for nearly every host (qwen.ai, huggingface, arxiv, vllm, lmsys, intel, google), so third-party facts come from search-result snippets, and the cost numbers are my own scaling estimates calibrated on E17 (in the scratchpad: /tmp/claude-0/-home-user-az-slm/009ea70f-3087-589b-9bcd-b220bdd76de5/scratchpad/est.py).",
+  "summary": "The E17 runs that have finished change the picture. Qwen3.8-27B W8A8 at 64 prompts costs $3.47/M blended (134 tok/s), and its decode step fits t(n) \u2248 0.29 s + 13 ms \u00d7 n. At n=64 the per-sequence term (0.83 s) is about 3\u00d7 the weight-read term, and prefill takes about half of each 512/128 request. So the cost is set by ACTIVE-parameter FLOPs, not by weight bandwidth, and the lever is fewer active params. Total params matter only for the 128 GiB limit and a ~0.3 s weight read per step. No Qwen3.8 model sits between the 27B and Flash-Next (176B in all, 6B active, does not fit in 128 GiB, no mainline CPU support). The best candidate is Qwen3.6-35B-A3B: Apache-2.0, April 2026, the same Gated DeltaNet hybrid family and tokenizer, 3B active (~4.8 vs ~54 GFLOP/token), MMLU-Pro 85.2 and GPQA 86.0 vs Qwen3.8-27B's ~84-86 and 89.2, and vLLM lists Xeon 6 BF16 serving for its Qwen3.5 twin. I estimate $0.76-1.11/M at INT8 with 128 prompts and $1.2-1.7/M at BF16, 2-4\u00d7 cheaper than today. The dense control is Qwen3.5-9B (MMLU-Pro 82.5, GPQA 81.7, IFEval 91.5; ~$1.0-1.2/M INT8, ~$1.4-1.8/M BF16). It has the lowest technical risk because it runs exactly the code path already working for the 27B. Gemma 4 26B-A4B costs about the same but scores lower (82.6/82.3), so it is a hedge. Phi-4 is dominated: Dec-2024, MMLU-Pro 70.4, GPQA 56.1, IFEval 63, 16k context, ~$1.7/M because 14B dense, and I found no primary source for a \"Phi-5\". gpt-oss-20b, Nemotron 3 Nano, Granite 4.x, LFM2 and Mistral Small 4 lose on quality, add reasoning tokens, or are too big. DiffusionGemma (Gemma-4-26B-A4B converted to 256-token block diffusion) buys fewer weight loads with ~25\u00d7 more FLOPs per generated token. That helps batch-1 latency on GPUs, but on a FLOP-poor CPU that already batches 64-256 requests I estimate it costs 2-3.5\u00d7 more than autoregressive Gemma 4 ($1.4-3.1/M) and it scores lower (MMLU-Pro 77.6 vs 82.6, GPQA 73.2 vs 82.3), so I don't recommend it beyond an optional sanity check. The quality risk for extraction, classification and summarization is mainly instruction and format adherence in non-thinking mode, because all the published scores are thinking-mode. Gate any switch with the E16 harness plus IFEval and a JSON-extraction set. Bottom line: benchmark Qwen3.6-35B-A3B (P0, BF16 then FP8/INT8) and Qwen3.5-9B (P0 dense control) on vLLM CPU at 64-256 prompts, add Gemma 4 26B-A4B as a P2 hedge, and run DiffusionGemma at most as a P3 curiosity. Note: WebFetch was blocked for nearly every host (qwen.ai, huggingface, arxiv, vllm, lmsys, intel, google), so third-party facts come from search-result snippets, and the cost numbers are my own scaling estimates calibrated on E17 (in the scratchpad: (orchestrator scratchpad) est.py).",
   "findings": [
    {
     "claim": "Calibration from our own data (E17, vLLM 0.31.0 CPU, Qwen3.8-27B W8A8, E16ds_v7, 8 threads). Mixed 512/128 gives 86.8 tok/s at n=16, 116.1 at n=32 and 134.4 at n=64, so n=64 costs 1.681/(134.4\u00d73600)\u00d71e6 = $3.47/M, better than the $4.56/M from E09 at n=16. Prefill is flat at 165-196 tok/s, i.e. 5.09 ms/token for ~54 GFLOP, which is 0.094 ms/GFLOP. Decode wall time for 256 steps is 151.8 s at n=16, 185.5 s at n=32 and 296.8 s at n=64. After removing the 32-token prefill this fits t(n) \u2248 0.29 s + 13 ms \u00d7 n. The 0.29 s matches reading ~28 GB of INT8 weights at ~97 GB/s. The 13 ms per sequence is ~1.5-3 ms of GDN recurrent state traffic (48 layers \u00d7 48 heads \u00d7 128\u00d7128 \u00d7 4 B \u2248 151 MB per sequence if the state is fp32) plus ~10 ms of compute for ~56.5 GFLOP (0.175 ms/GFLOP). The same model predicts $3.54/M at n=64, against $3.47/M measured. W4A16 prefill runs at only 32 tok/s, 16 threads halve throughput (66 vs 134 tok/s), and MTP lowers throughput.",
     "sources": [
-     "/home/user/az-slm/experiments/E17-vllm-scaling-mtp/raw/vllm-Avesed_Qwen3.8-27B-INT8-W8A8-mixed-n64-t8.json",
-     "/home/user/az-slm/experiments/E17-vllm-scaling-mtp/raw/vllm-Avesed_Qwen3.8-27B-INT8-W8A8-decode-n64-t8.json",
-     "/home/user/az-slm/experiments/E17-vllm-scaling-mtp/raw/vllm-Avesed_Qwen3.8-27B-INT4-W4A16-prefill-n64-t8.json",
-     "/home/user/az-slm/experiments/E09-vllm-cpu/README.md"
+     "experiments/E17-vllm-scaling-mtp/raw/vllm-Avesed_Qwen3.8-27B-INT8-W8A8-mixed-n64-t8.json",
+     "experiments/E17-vllm-scaling-mtp/raw/vllm-Avesed_Qwen3.8-27B-INT8-W8A8-decode-n64-t8.json",
+     "experiments/E17-vllm-scaling-mtp/raw/vllm-Avesed_Qwen3.8-27B-INT4-W4A16-prefill-n64-t8.json",
+     "experiments/E09-vllm-cpu/README.md"
     ],
     "confidence": "high",
     "relevance": "At realistic batch sizes, dense 27B decode is dominated by per-sequence compute and state, not weight bandwidth. A 512/128 request costs 512\u00d75.09 ms + 128\u00d7(0.29/n + 0.013) s, which tends to a floor of about $3.1/M however large the batch. Cutting active params (FLOPs) is the only big lever. INT4 on vLLM CPU is a dead end."
@@ -559,9 +559,9 @@
    {
     "claim": "Estimated throughput and $/M for the candidates on E16ds_v7 at $1.681/h, 512/128, vLLM continuous batching. Method: scale the E17 calibration by active FLOPs, with efficiency factors relative to dense 27B (dense 0.7-0.95; MoE prefill 0.35/0.5/0.7, MoE decode 0.4/0.5/0.7), BF16 compute \u00d71.47 (E09: 133 vs 198 tok/s), weight read = bytes \u00d7 f(n)/97 GB/s, plus state/KV traffic. Per-request seconds s = 512\u00b7p + 128\u00b7t(n)/n, and $/M = 1.681\u00b7s/3600/640\u00b71e6. Worked example, Qwen3.6-35B-A3B W8A8 at n=128 (mid): p = 0.094 \u00d7 4.8/0.5 = 0.90 ms (1105 tok/s prefill); b = 0.175 \u00d7 5.8/0.5 + 1.4 = 3.4 ms; a = (2.5 + 32.2 \u00d7 0.98)/97 = 0.35 s; t = 0.35 + 0.44 = 0.79 s (162 tok/s decode); s = 0.46 + 0.79 = 1.25 s, so 510 tok/s and $0.92/M. Results, pessimistic/mid/optimistic: Qwen3.6-35B-A3B W8A8 n=128 $1.11/$0.92/$0.76 (n=256 $0.98/$0.79/$0.64), BF16 n=128 $1.70/$1.42/$1.20, FP8-W8A16 n=128 $1.45/$1.16/$0.94. Qwen3.5-9B W8A8 n=128 $1.24/$1.05/$0.96, BF16 $1.80/$1.53/$1.39. Qwen3.5-4B W8A8 n=128 $0.79/$0.66/$0.60. Gemma 4 26B-A4B W8A8 n=128 $1.11/$0.89/$0.72, BF16 $1.69/$1.36/$1.11. Phi-4 14B W8A8 n=128 $1.92/$1.74/$1.67. gpt-oss-20b, MXFP4 dequantized to BF16, n=128 $1.65/$1.30/$1.02 before any reasoning-token overhead. Baseline Qwen3.8-27B W8A8: $3.54 modeled at n=64 vs $3.47 measured, with a floor of ~$3.1/M. Sensitivity: if MoE prefill efficiency is only 0.2 (or 0.1), Qwen3.6-35B-A3B W8A8 is still $1.47 (or $2.32)/M. Spot-equivalent is \u00d70.193, and E16ds_v6 (if E18 shows equal throughput) is \u00d70.79.",
     "sources": [
-     "/tmp/claude-0/-home-user-az-slm/009ea70f-3087-589b-9bcd-b220bdd76de5/scratchpad/est.py",
-     "/home/user/az-slm/experiments/E17-vllm-scaling-mtp/raw/",
-     "/home/user/az-slm/experiments/COST_MODEL.md"
+     "(orchestrator scratchpad) est.py",
+     "experiments/E17-vllm-scaling-mtp/raw/",
+     "experiments/COST_MODEL.md"
     ],
     "confidence": "medium",
     "relevance": "This is the core expected-gain estimate: a 2-4.5\u00d7 lower $/M than the current best ($3.47/M) for Qwen3.6-35B-A3B, Qwen3.5-9B and Gemma 4 26B-A4B. MoE prefill efficiency on CPU is the largest uncertainty and is what the first test must measure."
@@ -600,7 +600,7 @@
     "sources": [
      "https://arxiv.org/abs/2608.00146",
      "https://www.spheron.network/blog/deploy-diffusion-language-models-dllm-gpu-cloud-2026/",
-     "/tmp/claude-0/-home-user-az-slm/009ea70f-3087-589b-9bcd-b220bdd76de5/scratchpad/est.py"
+     "(orchestrator scratchpad) est.py"
     ],
     "confidence": "medium",
     "relevance": "Diffusion models are the wrong direction for offline batch work on a FLOP-poor CPU. They would raise $/M by 1.9-3.5\u00d7 compared with the same backbone run autoregressively, and they lose 5-9 points of quality."
@@ -739,8 +739,8 @@
    {
     "claim": "Current best measured cost is $2.39/M blended (512/128) on E16ds_v6 with vLLM 0.31 W8A8 at 64 prompts (prefill 263 tok/s, decode 54.3 out tok/s, mixed 154.1 total tok/s); E16ds_v7 gives $3.47/M on a slower instance. Per request (64 in flight): prefill 512/263=1.95 s (45%), decode 128/54.3=2.36 s (55%), measured 4.15 s. Decode at 64 sequences is identical on v6 and v7 (54.3 vs 55.2 tok/s) while prefill differs 34% and llama.cpp decode differs 13%, so the decode step is not DRAM- or GEMM-throughput-bound.",
     "sources": [
-     "/home/user/az-slm/experiments/E18-vllm-emerald-rapids/README.md",
-     "/home/user/az-slm/experiments/E17-vllm-scaling-mtp/README.md"
+     "experiments/E18-vllm-emerald-rapids/README.md",
+     "experiments/E17-vllm-scaling-mtp/README.md"
     ],
     "confidence": "high",
     "relevance": "Defines the baseline and shows decode (55% of time) is the bigger lever; any technique must be judged against this split."
@@ -748,8 +748,8 @@
    {
     "claim": "Decode step time fits ~0.29 s + 13.9 ms per sequence (v6: 0.511 s at 16 seqs, 1.179 s at 64; v7: 0.593/0.724/1.159 s at 16/32/64). Extrapolation: ~62 out tok/s at 128 seqs (+14%), ~67 at 256 (+22%), with a ceiling of ~72 tok/s. Only ~0.3 s per step is weight streaming (~30 GB at ~90 GB/s); the ~14 ms per-sequence cost is the floor.",
     "sources": [
-     "/home/user/az-slm/experiments/E17-vllm-scaling-mtp/raw/vllm.jsonl",
-     "/home/user/az-slm/experiments/E18-vllm-emerald-rapids/raw/vllm.jsonl"
+     "experiments/E17-vllm-scaling-mtp/raw/vllm.jsonl",
+     "experiments/E18-vllm-emerald-rapids/raw/vllm.jsonl"
     ],
     "confidence": "medium",
     "relevance": "Bounds what larger batches, MTP and weight compression can do: weight-byte reductions (W4A8) hit only the ~0.3 s fixed part, per-sequence work dominates."
@@ -757,7 +757,7 @@
    {
     "claim": "The Gated DeltaNet SSM state is FP32. Qwen3.5/3.8 configs set mamba_ssm_dtype=float32 and vLLM reads it. The logs confirm it: 'Setting attention block size to 896 tokens to ensure that attention page size is >= mamba page size' and 'Padding mamba page size by 14.43%', which matches 48 V-heads x 128 x 128 x 4 B = 3.15 MB + 61 KB conv state per layer. That is ~154 MB per sequence over 48 layers, and ~9.9 GB of state at 64 sequences, read and written every decode step (~20 GB of traffic, ~0.2-0.3 s of the 1.18 s step). vLLM exposes --mamba-ssm-cache-dtype; Qwen guidance says quality may suffer below FP32.",
     "sources": [
-     "/home/user/az-slm/experiments/E17-vllm-scaling-mtp/raw/",
+     "experiments/E17-vllm-scaling-mtp/raw/",
      "https://huggingface.co/Qwen/Qwen3.5-397B-A17B/discussions/2",
      "https://docs.vllm.ai/en/latest/api/vllm/config/cache/",
      "https://docs.modular.com/max/api/python/pipelines.architectures.qwen3_5/"
@@ -781,7 +781,7 @@
    {
     "claim": "MTP on real text (GSM8K, W8A8, 64 sequences, v6): k=1 gives +16% output tok/s at 95.9% acceptance, k=2 +14%, k=3 +6%, accuracy unchanged. With random prompts it loses 28-44%. MTP reduces KV capacity: 24 GiB holds 99,669 tokens without MTP, 70,485 with k=1, 56,388 with k=2. Known vLLM issues: CPU GDN + MTP + structured output can kill the EngineCore (#56419, fix PR #56518); MTP prefix-cache correctness on hybrid models (#47861, #53504).",
     "sources": [
-     "/home/user/az-slm/experiments/E17-vllm-scaling-mtp/README.md",
+     "experiments/E17-vllm-scaling-mtp/README.md",
      "https://github.com/vllm-project/vllm/issues/56419",
      "https://github.com/vllm-project/vllm/pull/47861",
      "https://github.com/vllm-project/vllm/issues/53504"
@@ -826,7 +826,7 @@
    {
     "claim": "INT4 paths on x86 vLLM are slow for this model: compressed-tensors W4A16 is 5-8x slower in prefill and 2.3x slower in decode than W8A8 (E17/E18). vLLM's CPU W4A8 (INT4 weights, INT8 compute) is implemented for MoE experts (fused_experts_cpu INT4_W4A8), not documented for dense linear layers. torchao's DA8W4 (Int8DynamicActivationInt4WeightConfig, AMX through Inductor max-autotune, PyTorch 2.8) is reported on par with vLLM offline on Llama-3.1-8B. Because decode at 64 sequences is not weight-bandwidth-bound, halving weight bytes would help only the ~0.3 s fixed part of the step.",
     "sources": [
-     "/home/user/az-slm/experiments/E17-vllm-scaling-mtp/README.md",
+     "experiments/E17-vllm-scaling-mtp/README.md",
      "https://docs.vllm.ai/en/latest/api/vllm/model_executor/layers/fused_moe/experts/cpu_moe/",
      "https://pytorch.org/blog/high-performance-quantized-llm-inference-on-intel-cpus-with-native-pytorch/",
      "https://docs.pytorch.org/ao/main/generated/torchao.quantization.Int8DynamicActivationInt4WeightConfig.html"
@@ -848,7 +848,7 @@
    {
     "claim": "vLLM 0.31 CPU defaults, from our logs and docs: chunked prefill on with max_num_batched_tokens=4096 (the documented offline default), prefix caching on, torch.compile mode DYNAMO_TRACE_ONCE. The AOT compile cache fails to load ('function' object has no attribute 'finalize_loading'), so each engine start recompiles (~2.5-3 min). Async scheduling is forcibly disabled on the CPU platform. The vllm-openai-cpu Dockerfile already sets LD_PRELOAD to tcmalloc and libiomp5. VLLM_CPU_SGL_KERNEL (AMX small-batch kernels) requires BF16 weights. Docs recommend one OpenMP thread per physical core; E17 measured \u221251% with 16 threads.",
     "sources": [
-     "/home/user/az-slm/experiments/E16-task-quality/raw/quality-run-w8a8.log",
+     "experiments/E16-task-quality/raw/quality-run-w8a8.log",
      "https://docs.vllm.ai/en/latest/getting_started/installation/cpu/",
      "https://docs.vllm.ai/en/v0.17.1/getting_started/installation/cpu/",
      "https://docs.vllm.ai/en/stable/api/vllm/platforms/cpu/",
@@ -909,7 +909,7 @@
    {
     "claim": "The 64-prompt benchmark runs carry ~8-9 s of fixed per-run overhead. On v6, marginal prefill between 16 and 64 prompts is 283 tok/s vs 263 measured. vllm bench throughput supports shared-prefix workloads (--random-prefix-len; the prefix_repetition dataset with prefix-len, suffix-len, num-prefixes and output-len).",
     "sources": [
-     "/home/user/az-slm/experiments/E18-vllm-emerald-rapids/raw/vllm.jsonl",
+     "experiments/E18-vllm-emerald-rapids/raw/vllm.jsonl",
      "https://docs.vllm.ai/en/latest/cli/bench/throughput/"
     ],
     "confidence": "medium",
