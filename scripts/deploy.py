@@ -250,8 +250,10 @@ def cmd_status(args):
         _, iv = arm.request("GET", vm["id"] + "/instanceView", API["Microsoft.Compute/virtualMachines"])
         power = [s["code"].split("/")[-1] for s in iv.get("statuses", []) if s["code"].startswith("PowerState/")]
         p = vm["properties"]
+        state = (power or ["?"])[0]
+        note = "  <- still holds vCPU quota and disk/IP costs; teardown when done" if state == "deallocated" else ""
         out(f"{vm['name']:<16} {vm['location']:<12} {p['hardwareProfile']['vmSize']:<20} {p.get('priority', 'Regular'):<8}"
-            f" {(power or ['?'])[0]:<12} {p.get('provisioningState')}")
+            f" {state:<12} {p.get('provisioningState')}{note}")
 
 
 def cmd_teardown(args):
@@ -263,6 +265,16 @@ def cmd_teardown(args):
         targets = everything["value"]
     order = {t: i for i, t in enumerate(DELETE_ORDER)}
     targets.sort(key=lambda r: order.get(r["type"], len(order)))
+    # Role assignments scoped to the run's resources are not listed by /resources and are not deleted
+    # with the VM identity, so remove them explicitly (by scope, before the resources go away).
+    _, ras = arm.request("GET", f"{arm.rg_path()}/providers/Microsoft.Authorization/roleAssignments", "2022-04-01")
+    run_scopes = (f"/virtualMachines/{args.run}", f"/disks/osdisk-{args.run}",
+                  f"/networkInterfaces/nic-{args.run}", f"/publicIPAddresses/pip-{args.run}")
+    for ra in ras.get("value", []):
+        scope = ra["properties"]["scope"].lower()
+        if (args.all and "/providers/" in scope.split("/resourcegroups/", 1)[-1]) or scope.endswith(tuple(s.lower() for s in run_scopes)):
+            status, _ = arm.request("DELETE", ra["id"], "2022-04-01")
+            out(f"  {'deleted' if status in (200, 204) else f'FAILED (HTTP {status})'} role assignment on {scope.rsplit('/', 2)[-2]}/{scope.rsplit('/', 1)[-1]}")
     if not targets:
         out("nothing to delete")
     for r in targets:
