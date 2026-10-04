@@ -2,7 +2,7 @@
 
 Updated 2026-10-04 22:30 UTC by the orchestrator from four of seven literature-research topics
 (Ollama, other CPU stacks, CPU-friendly models, stack-agnostic techniques). Raw findings with
-sources: [research/findings-2026-10-04-part1.json](research/findings-2026-10-04-part1.json).
+sources: [research/findings-2026-10-04.json](research/findings-2026-10-04.json).
 **Not yet adversarially verified**: PR numbers, release dates and benchmark scores come from the
 researchers' web searches. The remaining topics (diffusion LMs, CPU-inference literature,
 hardware/GPU/managed-API prices), the synthesis and the verification are running; they will
