@@ -16,7 +16,13 @@ input and output tokens per stack, quantization and VM, with the quality cost of
 6. Granite Rapids (v7) vs Emerald Rapids (v6): which is cheaper per token? (E13)
 7. What else could cut cost: cheaper sizes of the same CPU, CPU-friendlier models, decode tuning,
    other hardware, managed per-token APIs, diffusion LMs? [RESEARCH.md](RESEARCH.md) holds the answers
-   and the prioritized idea queue (R01–R32) that feeds E19 onward.
+   and the prioritized idea queue (R01–R44) that feeds E19 onward.
+8. Decisions only the user can make (RESEARCH.md **R33**, blocked until answered): (a) what the real
+   batch jobs look like (lengths, classification vs extraction, duplicates, volume); (b) whether data
+   may go to Azure AI Foundry managed models (if yes, R08 runs at P0 and may make CPU self-hosting
+   moot); (c) the quality bar (proposed default: ≤ 2 points below Qwen3.8-27B on the task metric in a
+   paired non-inferiority test, ≥ 98% JSON-schema validity, ≤ 3 points on IFEval strict); (d) the
+   monthly credit and round-3 spend.
 
 ## Constraints
 
@@ -28,6 +34,15 @@ input and output tokens per stack, quantization and VM, with the quality cost of
   02:00–11:15 UTC, five VMs) cost about **$50** (activity-log VM lifetimes × list price), of which
   ~$20 was VMs idling after their runners stopped. Round 2 budget: about **$15** (three VMs, ~3 h each); actual ~**$20** (~14 VM-hours: chains
   took longer than planned, and each VM idled ~1 h after its chain before the watchdog deallocated it).
+- **Round-3 budget** (2026-10-05): spend to date this month ~**$70** (rounds 1–2). The credit amount
+  is unknown to agents (Visual Studio subscriptions get $50, $100 or $150 a month depending on the
+  level; the user confirms it in R33(d)). Round-3 P0 chains (RESEARCH.md: A, B1, B2, C) are est.
+  18–21 VM-hours, **~$22–27** at v6 prices; cap per chain = its estimate × 1.5 (A ~$4 at D16s_v6 prices, B1 ~$12,
+  B2 ~$10, C ~$14). Stop rule: if a chain exceeds 1.5× its VM-hour estimate, stop it, harvest and
+  re-plan. Every chain ends by deallocating its own VM through the managed identity, so no ~1 h idle
+  tail. At the best measured cost ($2.39/M, $1.53 per 1k requests of 512/128), if the credit is
+  $150, the remaining ~$80 buys ~33M tokens (~52k requests) and a full month ~63M tokens (~98k
+  requests); the D16s_v6 estimate ($1.51/M) would stretch that by ~1.6×.
 - **Model**: [Qwen/Qwen3.8-27B](https://huggingface.co/Qwen/Qwen3.8-27B), a dense 27B hybrid
   (48 Gated DeltaNet linear-attention layers + 16 full-attention layers, hidden 5120, vocab 248k,
   vision encoder unused). GGUF quants from `bartowski/Qwen3.8-27B-GGUF`.
@@ -69,14 +84,14 @@ E13, E12; 02:37–10:49), `bench-vllm` (westus3) and `bench-ov` (centralus), bot
 | [E17](E17-vllm-scaling-mtp/) | vLLM batch scaling, W4A16, threads, MTP | b2-vllm | runner | done (MTP real-text follow-up on b2-v6) |
 | [E18](E18-vllm-emerald-rapids/) | vLLM on E16ds_v6 vs E16ds_v7 | b2-v6 | runner | done |
 | E19 | CPU-friendlier models on vLLM CPU: Qwen3.6-35B-A3B (MoE, ~3B active) and Qwen3.5-9B (dense), BF16/INT8/FP8, 64–256 prompts (R09, R10, R29) | – | runner | candidate |
-| E20 | Quality gate for E19 models, thinking off: GSM8K, MMLU, IFEval, JSON extraction, classification (R11) | – | runner | candidate |
+| E20 | Quality gate for E19 models, thinking off, paired non-inferiority: GSM8K, MMLU, IFEval, JSON extraction, classification (R11) | – | runner | candidate |
 | E21 | Same CPU, cheaper size: W8A8 at 64 prompts on D16s_v6 / D16ds_v6 (64 GiB) (R26, R21) | – | runner | candidate |
 | E22 | vLLM W8A8 decode tuning: 128–256 sequences, BF16 GDN state, decode-step profile (R12, R13, R16) | – | runner | candidate |
 | E23 | Shared-prefix workloads with prefix caching (R03) | – | runner | candidate |
 | E24 | Real-text 512/128: output budget, structured output, MTP at 64–128 sequences (R14, R15) | – | runner | candidate |
 | E25 | Gemma 4 26B-A4B (autoregressive) vs DiffusionGemma-26B-A4B on vLLM CPU (R04, R17) | – | runner | candidate |
 | E26 | AMD Turin F16as_v7 (16 full cores, no AMX) with vLLM CPU + zentorch, Central India (R05) | – | runner | candidate |
-| E27 | Managed per-token APIs (Azure AI Foundry) on the E16 task sets: quality per dollar (R08) | – | orchestrator + runner | candidate |
+| E27 | Managed per-token APIs (Azure AI Foundry, keyless): quality per dollar on R11's task sets and a hard knowledge set (R08; runs only if the user allows managed APIs, R33(b)) | – | orchestrator + runner | candidate |
 
 Status values: planned, queued, running, done, blocked, candidate (only if earlier results warrant it).
 
@@ -115,12 +130,27 @@ Status values: planned, queued, running, done, blocked, candidate (only if earli
   deallocated idle with results kept, and harvested after a restart.
 - 2026-10-04: seven literature-research topics synthesized into [RESEARCH.md](RESEARCH.md) (queue
   R01–R32). Verdicts: **Ollama is not competitive** (it forces one sequence at a time for Qwen3.8's
-  architecture; est. $26–37/M). The cheapest same-model step is **a cheaper size of the same CPU**
-  (D16s_v6, 64 GiB, est. $1.51/M if the job fits; E21). The biggest model-side lever is **fewer active
-  parameters** (Qwen3.6-35B-A3B, Qwen3.5-9B: est. 2–4× cheaper, quality gate required; E19, E20);
-  Phi-4 is dominated. Decode tuning (larger batches, BF16 GDN state, MTP) is est. ~−16% stacked (E22,
-  E24). **Diffusion LMs (DiffusionGemma) are the wrong regime** for batch CPU work: est. at best equal
+  architecture; est. $20–29/M on E16ds_v6, corrected 2026-10-05). The cheapest same-model step is **a
+  cheaper size of the same CPU** (D16s_v6, 64 GiB, est. $1.51/M if the job fits; E21). The biggest
+  model-side lever is **fewer active parameters** (Qwen3.6-35B-A3B, Qwen3.5-9B: est. 2–4× cheaper,
+  quality gate required; E19, E20); Phi-4 is dominated. Decode tuning (larger batches, BF16 GDN state,
+  MTP) is est. −13% stacked on 128 GiB sizes (~$2.07/M on E16ds_v6; corrected 2026-10-05 from ~−16%,
+  see below; E22, E24). **Diffusion LMs (DiffusionGemma) are the wrong regime** for batch CPU work: est. at best equal
   to their autoregressive twin, with lower quality (E25 only to confirm). SGLang is est. 0.85–1.3× of
-  vLLM (E14). All current GPU families have quota 0 in all 63 regions. **Managed APIs of comparable
-  quality cost $0.18–0.30/M**, 8–13× below our best measured CPU cost, so CPU self-hosting is justified
-  only for data control or when no managed model is good enough (E27 checks quality per dollar).
+  vLLM (E14). All current GPU families have quota 0 in all 63 regions. **Managed APIs cost
+  $0.06–0.30/M** at list price, 8–40× below our best measured CPU cost; whether any matches Qwen3.8-27B
+  is unknown until E27 (corrected 2026-10-05: gpt-oss-120b and Phi-4 are weaker, not comparable).
+- 2026-10-05: review pass on RESEARCH.md. Corrections: the 64 GiB D16s_v6 fit is unproven (the $2.39
+  baseline used 24 GiB of KV and peaked at ~65 GB in its largest process alone; R26 now measures
+  16 GiB of KV and whole-system memory first). The decode levers don't stack on 64 GiB: est.
+  **~$1.36/M on D16s_v6** (64 sequences, BF16 state + MTP-1, needs R13) vs ~$1.70/M on E16s_v6 and
+  ~$2.07/M on E16ds_v6 with every lever (128 sequences); the earlier "~$1.27/M on D16s_v6" combined
+  levers that don't fit together. MTP's gain shrinks with batch (+16% at 64, ~+10% at 128). A BF16
+  GDN state must also be checked for longer outputs. R11 needs ~2,800 paired items for a 2-point
+  non-inferiority call. Added R33 (user decisions, P0), R34–R36 (classification and extraction
+  alternatives: one constrained label token est. −53% per request; distillation), R37 (stack on the
+  chosen size), R38 (new vLLM release A/B), R39 (own W8A8), R40 (instance selection), R41 (D16ls_v6
+  for small models), R42–R43 (CPU-side overhead), R44 (VM image). Priorities: R27 and R14 to P0, R08 to
+  P0 if the user allows managed APIs; ranking by expected value per VM-hour with a confidence column.
+  Primary metric from round 3: $ per 1,000 requests next to $/M tokens. Chains pin the vLLM image
+  digest, measure run-to-run CV, and deallocate their VM at the end.
