@@ -14,6 +14,9 @@ input and output tokens per stack, quantization and VM, with the quality cost of
 4. Which serving stack is fastest on CPU: llama.cpp, vLLM, OpenVINO GenAI/OVMS, or SGLang? (E09–E11, E14)
 5. Does speculative decoding (draft model, MTP head) help batch throughput? (E12)
 6. Granite Rapids (v7) vs Emerald Rapids (v6): which is cheaper per token? (E13)
+7. What else could cut cost: cheaper sizes of the same CPU, CPU-friendlier models, decode tuning,
+   other hardware, managed per-token APIs, diffusion LMs? [RESEARCH.md](RESEARCH.md) holds the answers
+   and the prioritized idea queue (R01–R32) that feeds E19 onward.
 
 ## Constraints
 
@@ -60,11 +63,20 @@ E13, E12; 02:37–10:49), `bench-vllm` (westus3) and `bench-ov` (centralus), bot
 | [E11](E11-ovms/) | OpenVINO Model Server with continuous batching (OpenAI API) | – | runner | deprioritized (E10) |
 | [E12](E12-speculative-decoding/) | Speculative decoding in llama.cpp: draft model, MTP head, n-gram | bench-v6 | runner | done (partial; vLLM MTP in E17) |
 | [E13](E13-emerald-vs-granite/) | Emerald Rapids (v6) vs Granite Rapids (v7), same llama.cpp runs | bench-v6 | runner (scripted) | done |
-| E14 | SGLang CPU backend (Intel AMX kernels) | – | runner | candidate |
+| E14 | SGLang CPU backend vs vLLM on the same VM (shares vLLM's AMX INT8/GDN kernels; hybrid models need workaround flags; R02) | – | runner | candidate |
 | [E15](E15-summary/) | Cross-stack cost and quality summary, recommendation | – | orchestrator | done (rounds 1–2) |
 | [E16](E16-task-quality/) | Task-level quality of vLLM BF16, W8A8, W4A16 (GSM8K, MMLU) | b2-qual | runner | done |
 | [E17](E17-vllm-scaling-mtp/) | vLLM batch scaling, W4A16, threads, MTP | b2-vllm | runner | done (MTP real-text follow-up on b2-v6) |
 | [E18](E18-vllm-emerald-rapids/) | vLLM on E16ds_v6 vs E16ds_v7 | b2-v6 | runner | done |
+| E19 | CPU-friendlier models on vLLM CPU: Qwen3.6-35B-A3B (MoE, ~3B active) and Qwen3.5-9B (dense), BF16/INT8/FP8, 64–256 prompts (R09, R10, R29) | – | runner | candidate |
+| E20 | Quality gate for E19 models, thinking off: GSM8K, MMLU, IFEval, JSON extraction, classification (R11) | – | runner | candidate |
+| E21 | Same CPU, cheaper size: W8A8 at 64 prompts on D16s_v6 / D16ds_v6 (64 GiB) (R26, R21) | – | runner | candidate |
+| E22 | vLLM W8A8 decode tuning: 128–256 sequences, BF16 GDN state, decode-step profile (R12, R13, R16) | – | runner | candidate |
+| E23 | Shared-prefix workloads with prefix caching (R03) | – | runner | candidate |
+| E24 | Real-text 512/128: output budget, structured output, MTP at 64–128 sequences (R14, R15) | – | runner | candidate |
+| E25 | Gemma 4 26B-A4B (autoregressive) vs DiffusionGemma-26B-A4B on vLLM CPU (R04, R17) | – | runner | candidate |
+| E26 | AMD Turin F16as_v7 (16 full cores, no AMX) with vLLM CPU + zentorch, Central India (R05) | – | runner | candidate |
+| E27 | Managed per-token APIs (Azure AI Foundry) on the E16 task sets: quality per dollar (R08) | – | orchestrator + runner | candidate |
 
 Status values: planned, queued, running, done, blocked, candidate (only if earlier results warrant it).
 
@@ -101,4 +113,14 @@ Status values: planned, queued, running, done, blocked, candidate (only if earli
   real text, +16% at 64 sequences (E17 follow-up). The E15 recommendation is final for rounds 1–2.
   Next: the [RESEARCH.md](RESEARCH.md) queue. The safety net worked: b2-qual and b2-v6 were
   deallocated idle with results kept, and harvested after a restart.
-
+- 2026-10-04: seven literature-research topics synthesized into [RESEARCH.md](RESEARCH.md) (queue
+  R01–R32). Verdicts: **Ollama is not competitive** (it forces one sequence at a time for Qwen3.8's
+  architecture; est. $26–37/M). The cheapest same-model step is **a cheaper size of the same CPU**
+  (D16s_v6, 64 GiB, est. $1.51/M if the job fits; E21). The biggest model-side lever is **fewer active
+  parameters** (Qwen3.6-35B-A3B, Qwen3.5-9B: est. 2–4× cheaper, quality gate required; E19, E20);
+  Phi-4 is dominated. Decode tuning (larger batches, BF16 GDN state, MTP) is est. ~−16% stacked (E22,
+  E24). **Diffusion LMs (DiffusionGemma) are the wrong regime** for batch CPU work: est. at best equal
+  to their autoregressive twin, with lower quality (E25 only to confirm). SGLang is est. 0.85–1.3× of
+  vLLM (E14). All current GPU families have quota 0 in all 63 regions. **Managed APIs of comparable
+  quality cost $0.18–0.30/M**, 8–13× below our best measured CPU cost, so CPU self-hosting is justified
+  only for data control or when no managed model is good enough (E27 checks quality per dollar).
