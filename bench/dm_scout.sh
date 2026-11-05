@@ -8,7 +8,7 @@ OUT=/mnt/data/results/scout
 MAXB=${MAXB:-12000}
 mkdir -p "$OUT"
 cd "$OUT" || exit 1
-UA="Mozilla/5.0 (X11; Linux x86_64) az-slm-scout"
+UA="Mozilla/5.0 (X11; Linux x86_64) decision-model-scout"
 
 # HTML -> text with the standard library only (scripts, styles and tags dropped).
 cat > /tmp/html2txt.py <<'EOF'
