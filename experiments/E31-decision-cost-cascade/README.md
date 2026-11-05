@@ -110,6 +110,80 @@ D16ls_v6 basis (the 27B at its E16ds_v6 cost):
 
 "Gap closed" above 100% means the cascade beats the big model alone: the two models err on different items.
 
+### Throughput of every configuration
+
+Per VM, in steady state with the VM busy, model load (1–3 min) excluded. All VMs have a Xeon Platinum
+8573C with 8 physical cores and 16 vCPUs. Decisions generate no output, so prompt (input) tokens per second,
+counted by each server's tokenizer, is the only token rate. Workload: BANKING77-8. Sources:
+`summary-dm-e30.jsonl` (E30), `summary-dm-e32.jsonl` (E32), `tp_summary.jsonl` and `corr_summary.jsonl` (E29).
+
+**vLLM 0.31.0 CPU readouts**, batch mode, 64 sequences in flight, one thread per physical core, 3,080 items
+(the 27B: 308), best of two passes where two were run (0.8B/2B/4B list, FlyMy):
+
+| model | prompt format | VM | tokens per decision | prompt tok/s | decisions/s | per hour |
+|---|---|---|---:|---:|---:|---:|
+| Qwen3.5-0.8B | list | E16ds_v6 | 121 | 2,873 | 23.66 | 85k |
+| Qwen3.5-0.8B | list | D16ls_v6 | 121 | 3,056 | 25.16 | 91k |
+| Qwen3.5-2B | list | E16ds_v6 | 121 | 1,496 | 12.32 | 44k |
+| Qwen3.5-2B | list | D16ls_v6 | 121 | 1,585 | 13.05 | 47k |
+| Qwen3.5-2B | SemIf | D16ls_v6 | 235 | 1,589 | 6.77 | 24k |
+| Qwen3.5-4B | list | E16ds_v6 | 121 | 841 | 6.92 | 25k |
+| Qwen3.5-4B | list | D16ls_v6 | 121 | 874 | 7.20 | 26k |
+| Qwen3.5-4B | SemIf | D16ls_v6 | 235 | 860 | 3.67 | 13k |
+| FlyMy decision-4b (LoRA merged) | SemIf | D16ls_v6 | 235 | 858 | 3.66 | 13k |
+| JevK5 v0.3 | SemIf | D16ls_v6 | 235 | 871 | 3.71 | 13k |
+| Qwen3.5-9B | list | E16ds_v6 | 121 | 427 | 3.52 | 13k |
+| Qwen3.8-27B W8A8 | list | E16ds_v6 | 121 | 239 | 1.97 | 7k |
+
+- On the same runs D16ls_v6 was 4–6% faster than E16ds_v6, with identical per-item answers (one instance
+  each; same-size instances vary by 9–25%). The 9B was not run on D16ls_v6; the 27B does not fit in 32 GiB.
+- SemIf keeps the tokens per second and halves the decisions per second (prompts twice as long). A merged
+  LoRA runs at its base's speed.
+- Prompt tok/s varies by ≤ 10% across sets of 85–264 tokens per item (the shortest, sms_spam, is usually
+  the slowest per token), so decisions/s scales with length: the 4B list readout on D16ls_v6 does 9.55/s on sms_spam (85 tokens)
+  and 3.83/s on boolq (221 tokens).
+- Batch size (4B, E16ds_v6): 697 tok/s at 16 sequences and 797 at 128 (first 1,000 items), 841 at 64.
+
+**llama.cpp `/v1/systemone`** (`a01dff9`), E16ds_v6, `-t 8`, AMX build unless noted. Concurrency 1 and 4:
+the throughput step (Kev-0.8B and Laya 600 items, Kev-4B 160, Kev-9B 60, OpenJev 12). 8 slots and no-AMX:
+the correctness runs (100 items, Kev-9B 50, OpenJev 24):
+
+| model (GGUF) | tokens per decision | concurrency 1 | concurrency 4 | 8 slots, 8 in flight | no-AMX, 1 / 8 slots | p50 latency, c1 |
+|---|---:|---:|---:|---:|---:|---:|
+| Kev-0.8B Q8_0 | 71 | 5.69/s (402 tok/s) | 5.68/s | 5.40/s | 4.16 / 4.02/s | 0.18 s |
+| Laya BF16 (ModernBERT 421M) | 67 | 6.96/s (468 tok/s) | – | 8.64/s (568 tok/s) | 6.98 / 8.77/s | 0.14 s |
+| Kev-4B Q8_0 | 70 | 1.30/s (91 tok/s) | 1.28/s | 1.29/s | 0.92 / 0.91/s | 0.81 s |
+| Kev-9B Q8_0 | 70 | 0.72/s (50.5 tok/s) | 0.72/s | 0.72/s | 0.52 / 0.52/s | 1.47 s |
+| OpenJev Q8_0 (27B class) | 111 | 0.26/s (29 tok/s) | – | 0.27/s | 0.11 / 0.11/s | 3.80 s |
+
+- More requests in flight do not raise throughput: the server handles them one at a time (only Laya gains
+  25% at 8 slots). Laya and OpenJev ran the quality and throughput steps on one slot because batching moved
+  their probabilities by up to 0.011 (E29).
+- Longer inputs (140–695 tokens per item, jev-bench sets) run at 10–25% more tok/s: Kev-0.8B 454–504,
+  Kev-4B 100–109, Kev-9B 57–62, Laya 517–540 (`q_summary.jsonl`).
+- Per token, vLLM is 7.1× (0.8B), 9.2× (4B) and 8.5× (9B) faster than llama.cpp at the same size.
+
+**Cascades**, computed from the measured single-model rates (not run as a live cascade): the small model
+reads every item, then the big model gets a second pass, on the same VM, over the escalated share s:
+decisions/s = 1 / (1/small + s/big). The 27B and Kev-4B rows use the 308- and 800-item subsets.
+
+| small → big | VM | threshold | escalated | decisions/s | vs big alone | vs small alone | accuracy |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Qwen3.5-4B → JevK5 | D16ls_v6 | 0.9 | 12.9% | 5.76 | 1.55× | 0.80× | 93.0 |
+| Qwen3.5-4B → JevK5 | D16ls_v6 | 0.98 | 25.0% | 4.85 | 1.31× | 0.67× | 93.3 |
+| Qwen3.5-4B → Qwen3.5-9B | E16ds_v6 | 0.9 | 12.9% | 5.52 | 1.57× | 0.80× | 93.1 |
+| Qwen3.5-4B → Qwen3.8-27B | E16ds_v6 | 0.8 | 9.7% | 5.16 | 2.62× | 0.75× | 94.2 |
+| Qwen3.5-4B → Qwen3.8-27B | E16ds_v6 | 0.95 | 18.2% | 4.22 | 2.14× | 0.61× | 94.5 |
+| Qwen3.5-4B → Qwen3.8-27B | E16ds_v6 | 0.98 | 22.7% | 3.85 | 1.95× | 0.56× | 94.8 |
+| Kev-0.8B → Kev-4B (llama.cpp) | E16ds_v6 | 0.8 | 15.3% | 3.41 | 2.63× | 0.60× | 97.3 |
+| Qwen3.5-4B (vLLM) → Kev-4B (llama.cpp) | E16ds_v6 | 0.95 | 15.8% | 3.76 | 2.90× | 0.54× | 96.8 |
+| Qwen3.5-0.8B → Qwen3.5-4B | D16ls_v6 | 0.9 | 83.3% | 6.43 | 0.89× | 0.26× | 91.3 |
+| Qwen3.5-2B → Qwen3.5-4B | D16ls_v6 | 0.9 | 49.7% | 6.86 | 0.95× | 0.53× | 91.4 |
+
+For comparison, the generative round's best configuration (Qwen3.8-27B W8A8, vLLM, 64 prompts, E16ds_v6,
+[E18](../E18-vllm-emerald-rapids/README.md)): 263 tok/s prefill, 54 output tok/s decode, and 154 total tok/s
+(0.24 requests/s) on the 512-in/128-out mix.
+
 ## Cost per token
 
 See the cost table: on D16ls_v6 the cheapest measured readout is $0.068 per M input tokens (Qwen3.5-0.8B,
