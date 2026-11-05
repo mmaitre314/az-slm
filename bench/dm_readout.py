@@ -24,8 +24,9 @@ LABELS = [chr(c) for c in range(ord("A"), ord("Z") + 1)] + [chr(c) for c in rang
 
 def prompt_of(it):
     opts = "\n".join(f"{LABELS[i]}. {o}" for i, o in enumerate(it["options"]))
+    state = it["state"] if len(it["state"]) <= 8000 else it["state"][:8000] + " [...]"  # stay inside max-model-len
     return (f"Read the input and answer the question by choosing exactly one option.\n\n"
-            f"Input:\n{it['state']}\n\nQuestion: {it['question']}\n\nOptions:\n{opts}\n\n"
+            f"Input:\n{state}\n\nQuestion: {it['question']}\n\nOptions:\n{opts}\n\n"
             f"Reply with the letter of the best option only.")
 
 
@@ -49,8 +50,11 @@ def main():
 
     run = os.environ.get("RUN", "")
     t0 = time.time()
-    llm = LLM(model=args.model, dtype=args.dtype, max_model_len=args.max_model_len, max_num_seqs=args.max_num_seqs,
-              max_logprobs=128, limit_mm_per_prompt={"image": 0, "video": 0}, **json.loads(args.extra))
+    kwargs = dict(model=args.model, dtype=args.dtype, max_model_len=args.max_model_len, max_num_seqs=args.max_num_seqs,
+                  max_logprobs=128, limit_mm_per_prompt={"image": 0, "video": 0},
+                  enable_prefix_caching=False)  # repeated passes must redo the prefill, or throughput is inflated
+    kwargs.update(json.loads(args.extra))
+    llm = LLM(**kwargs)
     load_s = round(time.time() - t0, 1)
     tok = llm.get_tokenizer()
     # label -> token ids of "X" and " X" when each is a single token
@@ -65,6 +69,12 @@ def main():
     sp = SamplingParams(max_tokens=1, temperature=0.0, logprobs=128)
     kw = {"chat_template_kwargs": {"enable_thinking": False}}
     print(f"loaded {args.model} in {load_s}s; vllm {vllm.__version__}", flush=True)
+
+    # untimed warm-up (graph/kernel setup would otherwise land in the first dataset's throughput)
+    first = [json.loads(l) for l in open(args.data.split(",")[0]) if l.strip()][:16]
+    wm = [[{"role": "user", "content": prompt_of(it)}] for it in first if len(it["options"]) <= len(LABELS)]
+    if wm:
+        llm.chat(wm, sp, use_tqdm=False, **kw)
 
     for path in args.data.split(","):
         items = [json.loads(l) for l in open(path) if l.strip()]
