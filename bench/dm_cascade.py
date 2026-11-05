@@ -9,27 +9,38 @@ threshold, next to small-only and big-only.
   dm_cascade.py preds.jsonl [more.jsonl] --small kev-4b --big qwen3.8-27b-w8a8 --dataset banking77_8 \
                 --small-cost 0.04 --big-cost 0.42 [--md]
 Costs are $ per 1k decisions for each model alone (from the throughput runs); the cascade pays the
-small cost for every item plus the big cost for escalated items.
+small cost for every item plus the big cost for escalated items. Files are raw prediction files or
+dm_compact.py's compact form (both can be mixed, e.g. across experiments). A model is named by its
+tag, or TAG@RUN when the same tag appears in several runs (E30 and E31 share the Qwen tags).
 """
 import argparse
 import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import dm_compact  # noqa: E402
 
 
-def load(files, model, dataset):
+def load(files, spec, dataset):
+    """id -> (gold, top-1 option, top-1 probability) for one model on one dataset."""
+    model, _, run = spec.partition("@")
     out = {}
     for f in files:
+        if dm_compact.is_compact(f):
+            for it in dm_compact.iter_items(f):
+                if it["model"] == model and it["dataset"] == dataset and (not run or it["run"] == run):
+                    out[it["id"]] = (it["gold"], it["pred"], it["conf"])
+            continue
         for line in open(f):
             if not line.strip():
                 continue
             r = json.loads(line)
-            if r.get("model") == model and r.get("dataset") == dataset and r.get("probs") and not r.get("error"):
-                out[r["id"]] = r
+            if (r.get("model") == model and r.get("dataset") == dataset and r.get("probs") and not r.get("error")
+                    and (not run or r.get("run") == run)):
+                k, p = dm_compact.top1(r["probs"])
+                out[r["id"]] = (r["gold"], k, p)
     return out
-
-
-def top(r):
-    k = max(range(len(r["probs"])), key=r["probs"].__getitem__)
-    return k, r["probs"][k]
 
 
 def main():
@@ -46,13 +57,15 @@ def main():
     ids = sorted(set(s) & set(b))
     if not ids:
         raise SystemExit("no items predicted by both models")
+    if any(s[i][0] != b[i][0] for i in ids):
+        raise SystemExit("gold labels differ between the two models' items: not the same item set")
     n = len(ids)
-    acc_s = sum(top(s[i])[0] == s[i]["gold"] for i in ids) / n
-    acc_b = sum(top(b[i])[0] == b[i]["gold"] for i in ids) / n
+    acc_s = sum(s[i][1] == s[i][0] for i in ids) / n
+    acc_b = sum(b[i][1] == b[i][0] for i in ids) / n
     rows = [("small only", 0.0, acc_s, args.small_cost), ("big only", 1.0, acc_b, args.big_cost)]
-    for th in (0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.98, 0.99):
-        esc = [i for i in ids if top(s[i])[1] < th]
-        correct = sum((top(b[i])[0] if top(s[i])[1] < th else top(s[i])[0]) == s[i]["gold"] for i in ids)
+    for th in (0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.98, 0.99, 0.995, 0.999):
+        esc = [i for i in ids if s[i][2] < th]
+        correct = sum((b[i][1] if s[i][2] < th else s[i][1]) == s[i][0] for i in ids)
         frac = len(esc) / n
         rows.append((f"escalate if p < {th}", frac, correct / n, args.small_cost + frac * args.big_cost))
     hdr = ["policy", "escalated", "accuracy", "$ per 1k decisions", "gap closed"]

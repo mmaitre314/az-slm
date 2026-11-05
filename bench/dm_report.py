@@ -6,9 +6,11 @@ and cost per 1k decisions per (model, stack, VM), from harvested raw files. Stan
       E30=experiments/E30-vllm-decision-readout/raw E32=experiments/E32-trained-readout-vllm/raw \
       E29=experiments/E29-llamacpp-decision-models/raw [--md]
 
-Accuracy and ECE come from dm_score.py's metrics over every *-p-*.jsonl / q_*.preds.jsonl prediction
-file in a directory; throughput from summary-*.jsonl (vLLM readout: prompt tok/s, items/s per dataset,
-best repeat) or tp_summary.jsonl (llama.cpp /v1/systemone load runs, best concurrency).
+Accuracy and ECE come from score-all.jsonl (dm_score.py's metrics, computed on the VM from the full
+probabilities by bench/dm_pack.sh) or, without it, from dm_score.py over every *-p-*.jsonl /
+q_*.preds.jsonl prediction file in the directory; throughput from summary-*.jsonl (vLLM readout:
+prompt tok/s, items/s per dataset, best repeat) or tp_summary.jsonl (llama.cpp /v1/systemone load
+runs, best concurrency).
 $ per 1k decisions = $/h / (decisions/s * 3600) * 1000 on banking77_8; $ per M tokens likewise.
 """
 import argparse
@@ -69,10 +71,14 @@ def main():
     table = []
     for spec in args.dirs:
         exp, d = spec.split("=", 1)
+        pre = os.path.join(d, "score-all.jsonl")
         files = sorted(set(glob.glob(os.path.join(d, "*-p-*.jsonl")) + glob.glob(os.path.join(d, "q_*.preds.jsonl"))))
-        if not files:
+        if os.path.exists(pre):
+            mets = [json.loads(line) for line in open(pre) if line.strip()]
+        elif files:
+            mets = score(files)
+        else:
             continue
-        mets = score(files)
         tp = throughput(d)
         by = collections.defaultdict(dict)
         for m in mets:
