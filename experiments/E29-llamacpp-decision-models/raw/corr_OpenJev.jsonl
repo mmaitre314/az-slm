@@ -1,0 +1,4 @@
+{"label": "OpenJev amx-np8 vs amx-np1", "n_common": 24, "n_compared": 24, "n_missing_or_error": 0, "max_abs_diff": 0.003508, "mean_abs_diff": 0.0004354, "n_over_tol": 3, "top1_agree": 1.0, "tol": 0.001, "match": false}
+{"label": "OpenJev noamx-np8 vs noamx-np1", "n_common": 24, "n_compared": 24, "n_missing_or_error": 0, "max_abs_diff": 0.005236, "mean_abs_diff": 0.0003607, "n_over_tol": 2, "top1_agree": 1.0, "tol": 0.001, "match": false}
+{"label": "OpenJev amx-np1 vs noamx-np1", "n_common": 24, "n_compared": 24, "n_missing_or_error": 0, "max_abs_diff": 0.011263, "mean_abs_diff": 0.0009561, "n_over_tol": 5, "top1_agree": 1.0, "tol": 0.001, "match": false}
+{"label": "OpenJev amx-np8 vs noamx-np8", "n_common": 24, "n_compared": 24, "n_missing_or_error": 0, "max_abs_diff": 0.009364, "mean_abs_diff": 0.0008496, "n_over_tol": 5, "top1_agree": 1.0, "tol": 0.001, "match": false}

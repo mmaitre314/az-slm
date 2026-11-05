@@ -1,0 +1,6 @@
+Qwen/Qwen3.5-0.8B 2fc06364715b967f1860aea9cf38778875588b17
+Qwen/Qwen3.5-2B 15852e8c16360a2fea060d615a32b45270f8a8fc
+alibiserikbay/JevK5 c4f7fdb3aeab5582336406e78d3bef11bf98833d
+Qwen/Qwen3.5-4B 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a (pinned)
+flymy-ai/decision-4b-v1.2 79792bfb89e38498a21d1b71bc96b684be7b6617 (adapter + model.json)
+flymy-ai/decision-4b-v1.2 79792bfb89e38498a21d1b71bc96b684be7b6617 (adapter + model.json)

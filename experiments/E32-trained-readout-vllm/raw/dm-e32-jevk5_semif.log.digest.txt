@@ -1,0 +1,12 @@
+(MainProcess pid=1) INFO 11-05 08:56:58 [api_utils.py:286] non-default args: {'dtype': 'bfloat16', 'max_model_len': 4096, 'enable_prefix_caching': False, 'max_num_seqs': 64, 'max_logprobs': 128, 'disable_log_stats': True, 'limit_mm_per_prompt': {'image': 0, 'video': 0}, 'model': '/mnt/data/models/al
+(MainProcess pid=1) INFO 11-05 08:57:07 [model.py:699] Resolved architecture: Qwen3_5ForCausalLM
+(MainProcess pid=1) INFO 11-05 08:57:07 [model.py:2109] Using max model len 4096
+[...] distinct notable lines:
+(VllmWorker-0 pid=167) WARNING 11-05 08:57:24 [indexer_topk.py:35] Failed to import the DeepSelect extension (vllm._deepselect_C): No module named 'vllm._deepselect_C'
+(Worker pid=167) WARNING 11-05 08:58:49 [torch_utils.py:274] OMP_NUM_THREADS=8 is set; leaving Torch threads at 8 for serving. Multi-threaded torch CPU ops during serving can degrade performance through spin-wait contention and cgroup CPU-quota throttling.
+(EngineCore pid=113) WARNING 11-05 09:00:07 [vllm.py:1750] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+loaded /mnt/data/models/alibiserikbay/JevK5 in 189.9s; vllm 0.31.0
+[...] last lines:
+(EngineCore pid=113) INFO 11-05 09:18:25 [multiproc_executor.py:474] [shutdown] Executor: waiting for worker exit count=1
+(Worker pid=167) INFO 11-05 09:18:25 [multiproc_executor.py:838] Parent process exited, terminating worker queues
+(EngineCore pid=113) INFO 11-05 09:18:28 [multiproc_executor.py:481] [shutdown] Executor: all workers exited gracefully

@@ -1,0 +1,6 @@
+llama.cpp a01dff908b9c9311d7af316bba3c918063749bd0
+ggml-org/Kev-4B-GGUF revision f4624b6bb7072f1bab726a622c1cad3f96030b9e file Kev-4B-Q8_0.gguf
+ggml-org/Laya-GGUF revision 845f314dd047fc2444a5289a4d50c1e1d59e27e1 file Laya-BF16.gguf
+ggml-org/OpenJev-GGUF revision d2c376d11b6c466ab7bdc9fa458ace41cdf3e776 file OpenJev-Q8_0.gguf
+ggml-org/Kev-0.8B-GGUF revision 9231cb757e3320120077e42e52371971968f008d file Kev-0.8B-Q8_0.gguf
+ggml-org/Kev-9B-GGUF revision 6927aa248a75f163aa8fc46260f7cad718d1565b file Kev-9B-Q8_0.gguf

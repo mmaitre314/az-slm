@@ -1,0 +1,4 @@
+{"label": "Laya amx-np8 vs amx-np1", "n_common": 100, "n_compared": 100, "n_missing_or_error": 0, "max_abs_diff": 0.008518, "mean_abs_diff": 0.0010774, "n_over_tol": 33, "top1_agree": 1.0, "tol": 0.001, "match": false}
+{"label": "Laya noamx-np8 vs noamx-np1", "n_common": 100, "n_compared": 100, "n_missing_or_error": 0, "max_abs_diff": 0.010659, "mean_abs_diff": 0.0014054, "n_over_tol": 32, "top1_agree": 0.99, "tol": 0.001, "match": false}
+{"label": "Laya amx-np1 vs noamx-np1", "n_common": 100, "n_compared": 100, "n_missing_or_error": 0, "max_abs_diff": 0.0, "mean_abs_diff": 0.0, "n_over_tol": 0, "top1_agree": 1.0, "tol": 0.001, "match": true}
+{"label": "Laya amx-np8 vs noamx-np8", "n_common": 100, "n_compared": 100, "n_missing_or_error": 0, "max_abs_diff": 0.008967, "mean_abs_diff": 0.0011903, "n_over_tol": 32, "top1_agree": 0.99, "tol": 0.001, "match": false}

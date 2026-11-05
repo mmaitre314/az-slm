@@ -1,0 +1,4 @@
+{"label": "Kev-9B amx-np8 vs amx-np1", "n_common": 50, "n_compared": 50, "n_missing_or_error": 0, "max_abs_diff": 0.0, "mean_abs_diff": 0.0, "n_over_tol": 0, "top1_agree": 1.0, "tol": 0.001, "match": true}
+{"label": "Kev-9B noamx-np8 vs noamx-np1", "n_common": 50, "n_compared": 50, "n_missing_or_error": 0, "max_abs_diff": 0.0, "mean_abs_diff": 0.0, "n_over_tol": 0, "top1_agree": 1.0, "tol": 0.001, "match": true}
+{"label": "Kev-9B amx-np1 vs noamx-np1", "n_common": 50, "n_compared": 50, "n_missing_or_error": 0, "max_abs_diff": 0.010241, "mean_abs_diff": 0.0017035, "n_over_tol": 20, "top1_agree": 1.0, "tol": 0.001, "match": false}
+{"label": "Kev-9B amx-np8 vs noamx-np8", "n_common": 50, "n_compared": 50, "n_missing_or_error": 0, "max_abs_diff": 0.010241, "mean_abs_diff": 0.0017035, "n_over_tol": 20, "top1_agree": 1.0, "tol": 0.001, "match": false}

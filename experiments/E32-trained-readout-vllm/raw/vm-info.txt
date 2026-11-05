@@ -1,0 +1,11 @@
+vmSize Standard_D16ls_v6
+CPU(s):                                  16
+Model name:                              INTEL(R) XEON(R) PLATINUM 8573C
+BIOS Model name:                         INTEL(R) XEON(R) PLATINUM 8573C None CPU @ 2.3GHz
+Thread(s) per core:                      2
+Core(s) per socket:                      8
+Socket(s):                               1
+CPU(s) scaling MHz:                      121%
+               total        used        free      shared  buff/cache   available
+Mem:              31           1          22           0           8          30
+16

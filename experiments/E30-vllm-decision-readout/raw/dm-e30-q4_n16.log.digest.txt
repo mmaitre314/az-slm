@@ -1,0 +1,13 @@
+(MainProcess pid=1) INFO 11-05 08:03:24 [api_utils.py:286] non-default args: {'dtype': 'bfloat16', 'max_model_len': 4096, 'enable_prefix_caching': False, 'max_num_seqs': 16, 'max_logprobs': 128, 'disable_log_stats': True, 'limit_mm_per_prompt': {'image': 0, 'video': 0}, 'model': '/mnt/data/models/Qw
+(MainProcess pid=1) INFO 11-05 08:03:24 [model.py:699] Resolved architecture: Qwen3_5ForConditionalGeneration
+(MainProcess pid=1) INFO 11-05 08:03:24 [model.py:2109] Using max model len 4096
+[...] distinct notable lines:
+(MainProcess pid=1) WARNING 11-05 08:03:24 [model.py:1069] Model does not support mm_device_do_normalize, forcing mm_device_do_normalize = False.
+(VllmWorker-0 pid=118) WARNING 11-05 08:03:43 [indexer_topk.py:35] Failed to import the DeepSelect extension (vllm._deepselect_C): No module named 'vllm._deepselect_C'
+(Worker pid=118) WARNING 11-05 08:03:46 [torch_utils.py:274] OMP_NUM_THREADS=8 is set; leaving Torch threads at 8 for serving. Multi-threaded torch CPU ops during serving can degrade performance through spin-wait contention and cgroup CPU-quota throttling.
+(EngineCore pid=64) WARNING 11-05 08:05:09 [vllm.py:1750] Inductor compilation was disabled by user settings, optimizations settings that are only active during inductor compilation will be ignored.
+loaded /mnt/data/models/Qwen/Qwen3.5-4B in 106.4s; vllm 0.31.0
+[...] last lines:
+(EngineCore pid=64) INFO 11-05 08:08:19 [multiproc_executor.py:474] [shutdown] Executor: waiting for worker exit count=1
+(Worker pid=118) INFO 11-05 08:08:19 [multiproc_executor.py:838] Parent process exited, terminating worker queues
+(EngineCore pid=64) INFO 11-05 08:08:22 [multiproc_executor.py:481] [shutdown] Executor: all workers exited gracefully
