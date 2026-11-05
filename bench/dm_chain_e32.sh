@@ -44,7 +44,8 @@ if [ ! -f $M/Qwen/Qwen3.5-4B/config.json ]; then
 fi
 if [ ! -f $M/flymy-ai/decision-4b-v1.2/adapter/adapter_model.safetensors ]; then
   log "download FlyMy adapter weights + model.json only"
-  $HF download flymy-ai/decision-4b-v1.2 --include 'adapter/*' 'model.json' --local-dir $M/flymy-ai/decision-4b-v1.2 >> $R/$P-setup.log 2>&1 || log "FlyMy download FAILED"
+  $HF download flymy-ai/decision-4b-v1.2 adapter/adapter_config.json adapter/adapter_model.safetensors model.json \
+    --local-dir $M/flymy-ai/decision-4b-v1.2 >> $R/$P-setup.log 2>&1 || log "FlyMy download FAILED"
   echo "flymy-ai/decision-4b-v1.2 $(curl -sS https://huggingface.co/api/models/flymy-ai/decision-4b-v1.2 | jq -r .sha) (adapter + model.json)" >> $R/model-revisions.txt
 fi
 [ -f $D/banking77_8.jsonl ] || python3 $B/dm_data.py >> $R/data-prep.log 2>&1 || log "dm_data FAILED"
