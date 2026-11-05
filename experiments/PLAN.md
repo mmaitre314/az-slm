@@ -94,9 +94,10 @@ E13, E12; 02:37–10:49), `bench-vllm` (westus3) and `bench-ov` (centralus), bot
 | E27 | Managed per-token APIs (Azure AI Foundry, keyless): quality per dollar on R11's task sets and a hard knowledge set (R08; runs only if the user allows managed APIs, R33(b)) | – | orchestrator + runner | candidate |
 
 | [E28](E28-decision-models/) | Decision models (Jev, OpenJev & co): survey, brainstorm, plan | – | orchestrator | done (plan) |
-| E29 | Decision models through llama.cpp `/v1/systemone` (Kev, Laya, OpenJev GGUFs): JevBench public, BANKING77, throughput | dm-a | runner | running |
-| E30 | Decision readouts in vLLM/Python (Qwen3.5 0.8–9B, Qwen3.8-27B W8A8 training-free; FlyMy decision-4b, decider-2b, Laya): JevBench public, BANKING77, throughput | dm-b | runner | running |
-| E31 | Decision models on the cheapest AMX size (D16ls_v6), cost table vs Jev, cascade simulation | dm-c | orchestrator + runner | planned |
+| [E29](E29-llamacpp-decision-models/) | Decision models through llama.cpp `/v1/systemone` (Kev, Laya, OpenJev GGUFs): JevBench public, BANKING77, throughput | dm-a | runner | running |
+| [E30](E30-vllm-decision-readout/) | Decision readouts in vLLM/Python (Qwen3.5 0.8–9B, Qwen3.8-27B W8A8 training-free; FlyMy decision-4b, decider-2b, Laya): JevBench public, BANKING77, throughput | dm-b | runner | running |
+| E31 | Decision models on the cheapest AMX size (D16ls_v6), cost table vs Jev, cascade simulation | dm-c | orchestrator | running (with E32) |
+| [E32](E32-trained-readout-vllm/) | Trained letter-readout decision models on vLLM CPU: FlyMy decision-4b (LoRA merged by us), JevK5, base controls | dm-c | orchestrator | running |
 
 Status values: planned, queued, running, done, blocked, candidate (only if earlier results warrant it).
 
