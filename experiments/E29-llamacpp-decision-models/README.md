@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| Status | running (started 2026-11-05 07:15 UTC, background job `e29` on `dm-a`; chain script `bench/dm_chain_e29.sh`) |
+| Status | running (started 2026-11-05 07:20 UTC, background job `e29b` on `dm-a`; chain script `bench/dm_chain_e29.sh`) |
 | VM | `dm-a` (`Standard_E16ds_v6`, westus2, Regular), Emerald Rapids, 8 cores / 16 threads, 128 GiB, local NVMe |
 | Stack | llama.cpp `a01dff908b9c9311d7af316bba3c918063749bd0` (cloud-init native AMX build, `/opt/llama.cpp/build`) and a no-AMX control build of the same tree (`bench/build_native_noamx.sh` plus `--target llama-server`) |
 | Model | `ggml-org/Kev-4B-GGUF` Q8_0, `ggml-org/Laya-GGUF` BF16, `ggml-org/OpenJev-GGUF` Q8_0 (a 64-layer, 5120-wide Qwen3.5-arch model, about 27B, 28.6 GB, CC BY-NC 4.0, not 4B), `ggml-org/Kev-0.8B-GGUF` Q8_0, `ggml-org/Kev-9B-GGUF` Q8_0; revisions in `versions.txt` (raw data) |
-| Dates | started 2026-11-05 07:15 UTC; finished: _pending_ |
+| Dates | started 2026-11-05 07:20 UTC; finished: _pending_ |
 | Raw data | `raw/` (harvested from `/var/lib/azslm/results`): `chain.log`, `corr_*.jsonl`, `q_summary.jsonl`, `score_*.txt`, `tp_summary.jsonl`, `versions.txt` |
 
 Part of [E28](../E28-decision-models/README.md).
@@ -46,7 +46,12 @@ the slow 9B and 27B-class models).
 
 ## Measurements
 
-_Pending; the chain is running._
+Correctness (Kev-4B, 100 banking77_8 items, tolerance 1e-3): batched output matches single-slot output
+exactly (max abs diff 0.0) at 8 slots vs 1 on both the AMX and the no-AMX build, so the AMX multi-sequence
+corruption of E04 does not occur in the decision server. AMX vs no-AMX at the same slot count differ by up to
+0.014 (mean 0.0016, 35 of 100 items over 1e-3; top-1 agrees on all 100): numeric differences, not corruption.
+Speed in that check: 1.29 decisions/s and 89 prompt tok/s on AMX at 1 and at 8 slots, 0.92 decisions/s on no-AMX.
+Other results: _pending; the chain is running._
 
 ## Cost per token
 
