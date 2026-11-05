@@ -93,6 +93,11 @@ E13, E12; 02:37–10:49), `bench-vllm` (westus3) and `bench-ov` (centralus), bot
 | E26 | AMD Turin F16as_v7 (16 full cores, no AMX) with vLLM CPU + zentorch, Central India (R05) | – | runner | candidate |
 | E27 | Managed per-token APIs (Azure AI Foundry, keyless): quality per dollar on R11's task sets and a hard knowledge set (R08; runs only if the user allows managed APIs, R33(b)) | – | orchestrator + runner | candidate |
 
+| [E28](E28-decision-models/) | Decision models (Jev, OpenJev & co): survey, brainstorm, plan | – | orchestrator | done (plan) |
+| E29 | Decision models through llama.cpp `/v1/systemone` (Kev, Laya, OpenJev GGUFs): JevBench public, BANKING77, throughput | dm-a | runner | running |
+| E30 | Decision readouts in vLLM/Python (Qwen3.5 0.8–9B, Qwen3.8-27B W8A8 training-free; FlyMy decision-4b, decider-2b, Laya): JevBench public, BANKING77, throughput | dm-b | runner | running |
+| E31 | Decision models on the cheapest AMX size (D16ls_v6), cost table vs Jev, cascade simulation | dm-c | orchestrator + runner | planned |
+
 Status values: planned, queued, running, done, blocked, candidate (only if earlier results warrant it).
 
 ## Decision log
@@ -154,3 +159,9 @@ Status values: planned, queued, running, done, blocked, candidate (only if earli
   P0 if the user allows managed APIs; ranking by expected value per VM-hour with a confidence column.
   Primary metric from round 3: $ per 1,000 requests next to $/M tokens. Chains pin the vLLM image
   digest, measure run-to-run CV, and deallocate their VM at the end.
+- 2026-11-05: new direction from the user: decision models (TypeSafe Jev, released 2026-09-15, and
+  its open reimplementations). They are prefill-only (no decode), the regime where our CPUs are
+  strongest, and ≤ 2B models could match Jev's $0.042/M list price on CPU. Survey and plan in E28;
+  experiments E29 (llama.cpp native `/v1/systemone`) and E30 (vLLM/Python) run in parallel on
+  `dm-a` (westus2) and `dm-b` (eastus2), E16ds_v6; E31 confirms costs on D16ls_v6. Round budget ~$12.
+
