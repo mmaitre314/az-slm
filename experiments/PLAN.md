@@ -93,11 +93,11 @@ E13, E12; 02:37–10:49), `bench-vllm` (westus3) and `bench-ov` (centralus), bot
 | E26 | AMD Turin F16as_v7 (16 full cores, no AMX) with vLLM CPU + zentorch, Central India (R05) | – | runner | candidate |
 | E27 | Managed per-token APIs (Azure AI Foundry, keyless): quality per dollar on R11's task sets and a hard knowledge set (R08; runs only if the user allows managed APIs, R33(b)) | – | orchestrator + runner | candidate |
 
-| [E28](E28-decision-models/) | Decision models (Jev, OpenJev & co): survey, brainstorm, plan | – | orchestrator | done (plan) |
-| [E29](E29-llamacpp-decision-models/) | Decision models through llama.cpp `/v1/systemone` (Kev, Laya, OpenJev GGUFs): JevBench public, BANKING77, throughput | dm-a | runner | running |
-| [E30](E30-vllm-decision-readout/) | Decision readouts in vLLM/Python (Qwen3.5 0.8–9B, Qwen3.8-27B W8A8 training-free; FlyMy decision-4b, decider-2b, Laya): JevBench public, BANKING77, throughput | dm-b | runner | running |
-| E31 | Decision models on the cheapest AMX size (D16ls_v6), cost table vs Jev, cascade simulation | dm-c | orchestrator | running (with E32) |
-| [E32](E32-trained-readout-vllm/) | Trained letter-readout decision models on vLLM CPU: FlyMy decision-4b (LoRA merged by us), JevK5, base controls | dm-c | orchestrator | running |
+| [E28](E28-decision-models/) | Decision models (Jev, OpenJev & co): survey, brainstorm, plan, results and best options | – | orchestrator | done |
+| [E29](E29-llamacpp-decision-models/) | Decision models through llama.cpp `/v1/systemone` (Kev, Laya, OpenJev GGUFs): jev-bench sets, BANKING77, throughput | dm-a | runner | done: Kev-0.8B 95.9% on BANKING77-8 at 5.7 decisions/s; server serial, 7–9× slower per token than vLLM |
+| [E30](E30-vllm-decision-readout/) | Training-free decision readouts in vLLM CPU (Qwen3.5 0.8–9B, Qwen3.8-27B W8A8): jev-bench sets, BANKING77, throughput | dm-b | runner | done: 4B is the knee (91.5%, 841 tok/s); calibrated on clear questions |
+| [E31](E31-decision-cost-cascade/) | Decision models on the cheapest AMX size (D16ls_v6), cost table vs Jev, cascade simulation | dm-c | orchestrator | done: 4B readout $0.029 per 1k decisions (6–10× Jev's list price); 4B → JevK5/27B cascades |
+| [E32](E32-trained-readout-vllm/) | Trained letter-readout decision models on vLLM CPU: FlyMy decision-4b (LoRA merged by us), JevK5, base controls | dm-c | orchestrator | done: fine-tunes +0.4/+2.8 points over their base; SemIf prompt doubles tokens |
 
 Status values: planned, queued, running, done, blocked, candidate (only if earlier results warrant it).
 
@@ -165,4 +165,12 @@ Status values: planned, queued, running, done, blocked, candidate (only if earli
   strongest, and ≤ 2B models could match Jev's $0.042/M list price on CPU. Survey and plan in E28;
   experiments E29 (llama.cpp native `/v1/systemone`) and E30 (vLLM/Python) run in parallel on
   `dm-a` (westus2) and `dm-b` (eastus2), E16ds_v6; E31 confirms costs on D16ls_v6. Round budget ~$12.
+- 2026-11-05 (results, E28–E32; spent ~$13): the measured prefill of small models is 41–56% of the
+  estimate, so no CPU option beats Jev's list price: the cheapest accurate setup, Qwen3.5-4B's
+  training-free list readout on vLLM CPU (D16ls_v6), costs $0.029 per 1k BANKING77-8 decisions at 91.5%,
+  6–10× Jev's per-decision price for short items. Escalating its least confident 13% to JevK5 or
+  Qwen3.5-9B gives 93% at $0.036; Kev-0.8B (llama.cpp `/v1/systemone`) gives 95.9% on routing at ≈ $0.036
+  but is weak elsewhere. Next for decisions: Kev's head on vLLM (R45, est. $0.005 per 1k), lean prompts
+  (R46), and the user's own decisions as the test set (R33). Lesson: chains end by packing a compact
+  bundle (`bench/dm_pack.sh`); fetching MB-sized files through Run Command left three VMs idle for ~$4.
 

@@ -2,9 +2,9 @@
 
 | | |
 | --- | --- |
-| Status | planned (2026-11-05); measurements in E29 (llama.cpp `/v1/systemone`), E30 (vLLM/Python readouts), E31 (cheapest size, cost table) |
+| Status | **done** (2026-11-05): plan, then results from E29 (llama.cpp `/v1/systemone`), E30 (vLLM training-free readouts), E32 (trained letter-readout models on vLLM) and E31 (cheapest size, cost vs Jev, cascades); see [Results](#results-e29e32) |
 | Owner | orchestrator |
-| VMs | `dm-a` (E16ds_v6, westus2), `dm-b` (E16ds_v6, eastus2); `dm-c` (D16ls_v6) later |
+| VMs | `dm-a` (E16ds_v6, westus2), `dm-b` (E16ds_v6, eastus2), `dm-c` (D16ls_v6, centralus); all deleted |
 | Sources | scout bundle fetched from a VM on 2026-11-05 (`bench/dm_scout.sh`: Hugging Face API search, model cards, GitHub READMEs, JevBench boards, papers); web search. Vendor and community numbers below are **as reported**, not verified, unless marked measured |
 
 ## What a decision model is
@@ -137,5 +137,50 @@ _Written before the results were known._
 - Scoring: `bench/dm_score.py` (accuracy, macro-F1, ECE, Brier, NLL, and ECE after temperature
   scaling fitted on a held-out half). Datasets: `bench/dm_data.py` (BANKING77 from PolyAI's CSVs).
 - Cost: `$/M input = $/h ÷ (prompt tok/s × 3600) × 1e6`, `$ per 1k decisions = $/h ÷ (decisions/s × 3600) × 1000`,
-  VM busy 100% ([COST_MODEL.md](../COST_MODEL.md)); E16ds_v6 $1.326/h all-in, D16ls_v6 $0.732/h.
-- Budget: ~$12 (dm-a and dm-b ~3 h each, dm-c ~1.5 h).
+  VM busy 100% ([COST_MODEL.md](../COST_MODEL.md)); E16ds_v6 $1.326/h all-in, D16ls_v6 $0.744/h (with the P10 disk it
+  needs; $0.732 in the estimates above assumed a P6).
+- Budget: ~$12 (dm-a and dm-b ~3 h each, dm-c ~1.5 h). Spent: about $13 (dm-a ~4 h and dm-b 3.9 h at $1.326/h,
+  dm-c 3.2 h at $0.837/h in centralus). About $4 of it was idle time between the chains' end and the harvest
+  (a watcher timed out, and the first harvest tried to fetch MBs through Run Command); `bench/dm_pack.sh` now
+  makes the harvest take minutes.
+
+## Results (E29–E32)
+
+Measured on 2026-11-05 on 8-core Emerald Rapids VMs: BANKING77-8 (an 8-option intent question per
+customer message, 3,080 test items) and six jev-bench sets (200 items each). Details, tables and caveats:
+[E29](../E29-llamacpp-decision-models/README.md), [E30](../E30-vllm-decision-readout/README.md),
+[E32](../E32-trained-readout-vllm/README.md), and the cost table and cascades in
+[E31](../E31-decision-cost-cascade/README.md).
+
+| hypothesis | verdict | evidence |
+| --- | --- | --- |
+| H1 economics: a readout costs ≤ 50% of the generative answer | holds at the margin | 27B W8A8: a 512-token decision costs $0.72–0.79 per 1k vs $1.53 for 512/128 (47–52%). A generation constrained to one label would cost about the same as the readout; its gain is the full distribution in one pass (E30) |
+| H2 size: 2–4B within 5 points of Jev on JevBench public | untested | the JevBench runner is third-party code we did not run, and Jev was not called. On our sets the fine-tunes beat their own base by only 0.4 (FlyMy) and 2.8 (JevK5) points (E32) |
+| H3 CPU cost: ≤ 2B at ≥ 2,500 tok/s, ≤ 1B below Jev's $0.042/M | rejected | Qwen3.5-0.8B 3,056 tok/s = $0.068/M on D16ls_v6 (1.6× Jev); 2B 1,585 tok/s. Measured prefill is 41–56% of the estimates in the table above (E30, E31) |
+| H4 runtime: vLLM 3–10× faster than llama.cpp | holds, 7–9× | Kev-0.8B 402 vs Qwen3.5-0.8B 2,873 tok/s; Kev-4B 91 vs 841; llama.cpp's decision server gains nothing from concurrency (E29) |
+| H5 calibration: trained models ECE ≤ 0.1, readouts need T | rejected as stated | Calibration depends on the task more than on training: every list readout has ECE ≤ 0.06 on BANKING77-8 untouched, every model is overconfident on go_emotions and sst5 (0.18–0.39; a fitted T fixes most); trained models range from 0.016 (JevK5) to 0.67 (Laya off-domain) |
+| H6 cascade: ≥ 80% of the gap at ≤ 30% of the 27B cost | holds within noise | Qwen3.5-4B → 27B: 75% of the gap at 25% of the cost, 87% at 34%, all of it at 38% (308 items) (E31) |
+
+Also measured: the E04 AMX multi-sequence corruption does not reach llama.cpp's decision server (Kev's
+probabilities are identical at 1 and 8 slots, E29).
+
+Brainstorm items revisited: (1) prefill-only pays, though less against a one-label generation than against
+free text; (2) smaller models are cheaper, but untrained ones below 4B are not accurate enough, and trained
+small ones (Kev-0.8B) are accurate only in their domain; (3) many questions per state was not tested (R49);
+(4) calibrated cascades work (E31); (5) distillation was not tested; (6) a private drop-in `/v1/systemone`
+works today with llama.cpp and Kev, at ~5.7 decisions/s (~20k per hour) per 8-core VM for Kev-0.8B.
+
+### Best options
+
+| need | option | BANKING77-8 | $ per 1k decisions (D16ls_v6) |
+| --- | --- | ---: | ---: |
+| general decisions, self-hosted | Qwen3.5-4B training-free list readout, vLLM CPU | 91.5% | 0.029 |
+| +1.5 points | the same, escalating items below 0.9 confidence (13%) to JevK5 v0.3 or Qwen3.5-9B | 93.0–93.1% | 0.036 |
+| intent routing behind a Jev-compatible API | Kev-0.8B, llama.cpp `/v1/systemone` (→ Kev-4B below 0.8 confidence: 97.3%, $0.061) | 95.9% | ≈ 0.036 (est.) |
+| highest accuracy | Qwen3.5-4B escalating its least confident 23% to Qwen3.8-27B W8A8 | 94.8% (308) | 0.071 |
+| lowest price, if data may leave the tenant | Jev 1.13 API at list price (accuracy not checked) | – | 0.003–0.005 |
+
+On this subscription, self-hosting is 6–10× Jev's list price per decision for short items: it buys data
+control, no rate limits and the choice of model, not a lower price. Two levers could bring CPU below Jev's
+price: Kev's pointer head on vLLM's prefill (est. $0.005 per 1k at Kev-0.8B's routing accuracy, R45) plus a
+3-year reservation (× 0.41, R30).

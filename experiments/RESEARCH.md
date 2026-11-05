@@ -549,6 +549,21 @@ Retired IDs: **R06** (vLLM runtime knobs: tcmalloc, Intel OpenMP, AOT compile ca
 Priority changes on 2026-10-05: R27 P1 → P0 (free), R08 P1 → P0 (conditional on R33(b)), R14 P1 → P0
 (best expected value per VM-hour among the measured levers).
 
+### Decision-model follow-ups (added 2026-11-05, after E28–E32)
+
+Same columns as the queue, but effects are in $ per 1k BANKING77-8 decisions on D16ls_v6 against the
+measured basis: Qwen3.5-4B's training-free list readout on vLLM CPU, **$0.029 per 1k** at 91.5% (E31).
+
+| ID | Pri | Idea | Hypothesis (falsifiable) | Expected effect on $ per 1k decisions | Conf. | Cost to test | Prerequisites / blockers | Status | Exp. |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| R50 | P0 | **The user's own decisions as the test set** (from R33(a)): 300–1,000 labeled items through the 4B readout, JevK5, Kev-0.8B and the 4B → JevK5 cascade. | E31's ranking holds within 2 points; the trained models' BANKING77 lead shrinks off their training domain. | Decides what to deploy | – | ~1 VM-h ($0.75) | the user's sample and labels (R33) | blocked (user) | – |
+| R45 | P1 | **Kev's pointer head on vLLM's prefill**: merge Kev-0.8B's LoRA into its Qwen3.5-0.8B base (`bench/dm_lora_merge.py`), get the option-token hidden states from vLLM's pooling output, and apply Kev's head (weights read as data) in our own code; compare with E29's llama.cpp probabilities on 100 items. | Same top-1 as llama.cpp on ≥ 99% of items (max difference ≤ 0.02) at ≥ 2,500 prompt tok/s on D16ls_v6. Falsified if vLLM CPU can't return per-token hidden states for the hybrid model. | Kev-0.8B's 95.9% routing accuracy at est. **$0.005** (7× below its llama.cpp cost, 1.6× Jev's list price) | medium | ~1 VM-h ($0.75) + code | Kev's head format and prompt rendering (llama.cpp `server-decision.cpp` as reference); vLLM CPU pooling for Qwen3.5 (*unverified*) | queued | – |
+| R46 | P1 | **Lean list prompt**: instructions cut to ~15 tokens, no "Input/Question/Options" scaffolding; E30's items on the 0.8B and 4B. | ≥ 25% fewer tokens per BANKING77-8 item (121 → ≤ 90), accuracy within ±1 point. | −25–35% for every readout (4B: ~$0.020) | high | ~0.5 VM-h ($0.37) | none | queued | – |
+| R48 | P2 | **W8A8 Qwen3.5-4B/9B readouts** (a published compressed-tensors checkpoint, else our RTN W8A8). | Prefill ≥ 1.4× BF16 with BANKING77-8 accuracy within 1 point. | −30–40% | medium | ~1 VM-h ($0.75) | a checkpoint (R10) | queued | – |
+| R47 | P2 | **Menu first, cached**: for a fixed option menu (e.g. all 77 intents) put the menu and instructions before the state and turn prefix caching on, on a pure-attention backbone or with a finer hybrid cache (vLLM caches Qwen3.5's state in 896-token blocks). | With a ~450-token menu and ~20-token messages, cost per decision falls ≥ 3×. Falsified if the hybrid cache misses below 896 tokens and no pure-attention model reaches the 4B's accuracy. | ≥ 3× on large fixed menus; nothing on changing menus such as BANKING77-8 | medium | ~0.5 VM-h | a suitable backbone | queued | – |
+| R49 | P2 | **Many questions per state**: one prefill of the state, then each question as a suffix on the cached prefix (prefix caching, or Kev's branch design through R45). | 10 questions on a 1,000-token document cost ≤ 2 prefills of it. | up to 5× for multi-field decisions on one document | medium | ~0.5 VM-h | R45 or R47 | queued | – |
+| R51 | P3 | **Paired Jev API comparison** on the same items: accuracy, ECE and billed input tokens per decision. | Jev bills 60–130 input tokens per BANKING77-8 item and lands within ±3 points of JevK5. | Replaces E31's 71–121-token price assumption | – | < $1 of API | an API key, the egress allow-list, and the user's consent to send data out (R33(b)) | blocked (user) | – |
+
 ## Hypotheses register
 
 The key falsifiable hypotheses behind the queue. Each is tested by the rows named.

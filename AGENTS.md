@@ -86,7 +86,9 @@ ARM conventions:
   - `deploy.py run <vm> bench/x.sh [-e K=V]`: runs as root under bash; returns the script's exit code.
     Run Command keeps only the **last 4 KiB** of output and times out after 90 minutes, so use
     `--background <job>` for anything long and `deploy.py job <vm> <job>` to poll it.
-  - `deploy.py fetch <vm> <remote> <local>` copies small files (4 KiB per call: compress first).
+  - `deploy.py fetch <vm> <remote> <local>` copies small files: ~2.9 KB per call at 20–40 s each, so 100 KB
+    takes ~15 min. Shrink results on the VM first (scores computed there, compact per-item data, `xz`;
+    `bench/dm_pack.sh` does this for decision runs) and make it a chain's last step.
   - `bench/save_results.sh <files>` (on the VM) copies results to `/var/lib/azslm/results` on the OS
     disk; `deploy.py harvest <vm> <local-dir> [--release]` fetches and unpacks them. Call it after
     every step of a job chain.

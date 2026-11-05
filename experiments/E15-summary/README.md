@@ -4,7 +4,7 @@
 | --- | --- |
 | Status | done for rounds 1–2 (2026-10-04 18:00 UTC); extended by the RESEARCH.md queue |
 | Owner | orchestrator |
-| Sources | E03, E05, E06, E09, E10, E12, E13, E16, E17, E18 |
+| Sources | E03, E05, E06, E09, E10, E12, E13, E16, E17, E18; decision jobs: E28–E32 |
 
 ## Question
 
@@ -72,6 +72,25 @@ For offline batch jobs with Qwen3.8-27B on Azure CPUs:
 
 The comparison with managed per-token APIs, CPU-friendlier models (smaller dense, MoE), diffusion
 LMs and other stacks (SGLang) is in [RESEARCH.md](../RESEARCH.md) and its queue.
+
+## Decision jobs (E28–E32)
+
+Closed questions (pick one of N options, yes/no, a level), answered as a probability distribution from
+one prefill with no generation. Measured on BANKING77-8 (8 options per customer message, 3,080 items)
+and six jev-bench sets; costs per 1k decisions on D16ls_v6 ($0.744/h all-in, the same CPU as E16ds_v6 at
+0.56× the price; [E31](../E31-decision-cost-cascade/README.md)):
+
+| option | stack | BANKING77-8 | $ per 1k decisions | $ per M input |
+| --- | --- | ---: | ---: | ---: |
+| **Qwen3.5-4B, training-free list readout** | vLLM 0.31.0 CPU, BF16 | 91.5% | **0.029** | 0.24 |
+| same, escalating the 13% below 0.9 confidence to JevK5 v0.3 | vLLM | 93.0% | 0.036 | – |
+| Kev-0.8B (trained decision model; weak outside routing) | llama.cpp `/v1/systemone` | 95.9% | ≈ 0.036 (est.) | ≈ 0.51 |
+| Qwen3.5-4B escalating its least confident 23% to Qwen3.8-27B W8A8 | vLLM | 94.8% (308) | 0.071 | – |
+| Jev 1.13 API, list price (accuracy not measured) | managed | – | 0.003–0.005 | 0.042 |
+
+The same stack lessons apply: vLLM prefills 7–9× faster than llama.cpp's decision server (which does
+not batch), and the 4B is the smallest untrained model that answers reliably. No CPU option beats
+Jev's list price on this subscription; Kev's head on vLLM plus a 3-year reservation might (RESEARCH.md R45).
 
 ## Open questions
 

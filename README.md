@@ -47,6 +47,16 @@ sequences. Next ideas (other stacks, CPU-friendlier models, diffusion LMs, manag
 are queued in [RESEARCH.md](experiments/RESEARCH.md); current status is in
 [PLAN.md](experiments/PLAN.md).
 
+### Decision jobs
+
+Closed questions (choose one of N options, yes/no) answered by one prefill, with probabilities and no
+generation ([E28](experiments/E28-decision-models/) to [E32](experiments/E32-trained-readout-vllm/)).
+On the cheapest 8-core AMX size (D16ls_v6, $0.744/h), Qwen3.5-4B's training-free readout on vLLM CPU
+costs **$0.029 per 1k decisions** at 91.5% on an 8-option BANKING77 task; escalating its least
+confident 13% to a fine-tuned 4B (JevK5) gives 93% at $0.036. Kev-0.8B through llama.cpp's
+`/v1/systemone` reaches 95.9% on that routing task at ≈ $0.036 but is weak elsewhere. Jev's API list
+price is still 6–10× lower per decision for these short items ([E31](experiments/E31-decision-cost-cascade/)).
+
 ## How it works
 
 Nothing connects to the VMs over SSH. Everything goes through Azure Resource Manager (ARM):
